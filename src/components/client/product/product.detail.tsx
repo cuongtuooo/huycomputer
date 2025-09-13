@@ -7,7 +7,7 @@ import 'styles/product.scss';
 import ModalGallery from './modal.gallery';
 import { useCurrentApp } from '@/components/context/app.context';
 import { Link, useNavigate } from 'react-router-dom';
-
+import DOMPurify from 'dompurify';
 interface IProps {
     currentProduct: IProductTable | null;
 }
@@ -234,9 +234,24 @@ const ProductDetail = (props: IProps) => {
                                 />
                             </Col>
                             <Col span={24}>
-                                <div className='title'><strong>Tên sản phẩm: </strong> {currentProduct?.name}</div>
-                                <div className='title'><strong>Chức năng chính: </strong> {currentProduct?.mainText}</div>
-                                <div className='author'>Tác giả: <a href='#'>{currentProduct?.desc}</a> </div>
+                                <div className='title'><strong>Tên sản phẩm:</strong> {currentProduct?.name}</div>
+
+                                <div className='title'><strong>Nội dung sản phẩm:</strong></div>
+                                <div
+                                    className="rich-content"
+                                    dangerouslySetInnerHTML={{
+                                        __html: DOMPurify.sanitize(currentProduct?.mainText || '', { USE_PROFILES: { html: true } })
+                                    }}
+                                />
+
+                                <div className='title' style={{ marginTop: 12 }}><strong>Mô tả chi tiết:</strong></div>
+                                <div
+                                    className="rich-content"
+                                    dangerouslySetInnerHTML={{
+                                        __html: DOMPurify.sanitize(currentProduct?.desc || '', { USE_PROFILES: { html: true } })
+                                    }}
+                                />
+
                                 <div className='rating'>
                                     <Rate value={5} disabled style={{ color: '#ffce3d', fontSize: 12 }} />
                                     <span className='sold'>

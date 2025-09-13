@@ -76,13 +76,13 @@ const AppHeader = (props: IProps) => {
         return (
             <div className='pop-cart-body'>
                 <div className='pop-cart-content'>
-                    {carts?.map((book, index) => {
+                    {carts?.map((product, index) => {
                         return (
                             <div className='book' key={`book-${index}`}>
-                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${book?.detail?.thumbnail}`} />
-                                <div>{book?.detail?.mainText}</div>
+                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/Product/${product?.detail?.thumbnail}`} />
+                                <div>{product?.detail?.name}</div>
                                 <div className='price'>
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(book?.detail?.price ?? 0)}
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product?.detail?.price ?? 0)}
                                 </div>
                             </div>
                         )
@@ -106,67 +106,64 @@ const AppHeader = (props: IProps) => {
             <div className='header-container'>
                 <header className="page-header">
                     <div className="page-header__top">
-                        <div className="page-header__toggle" onClick={() => {
-                            setOpenDrawer(true)
-                        }}>☰</div>
-                        <div className='page-header__logo'>
-                            <span className='logo'>
-                                <span onClick={() => navigate('/')}> <FaReact className='rotate icon-react' />Nguyễn Xuân Lân</span>
+                        <div className="page-header__toggle" onClick={() => setOpenDrawer(true)}>☰</div>
 
-                                <VscSearchFuzzy className='icon-search' />
+                        <div onClick={() => window.location.reload()} className="page-header__logo">
+                            {/* Brand */}
+                            <span className="logo" onClick={() => navigate('/')}>
+                                <FaReact className="rotate icon-react" />
+                                Huy Computer
                             </span>
-                            <input
-                                className="input-search" type={'text'}
-                                placeholder="Bạn tìm gì hôm nay"
-                                value={props.searchTerm}
-                                onChange={(e) => props.setSearchTerm(e.target.value)}
-                            />
-                        </div>
 
+                            {/* NHÓM SEARCH MỚI: icon nằm trong wrapper, input padding-left chuẩn */}
+                            <div className="search-group">
+                                <VscSearchFuzzy className="icon-search" />
+                                <input
+                                    className="input-search"
+                                    type="text"
+                                    placeholder="Bạn tìm gì hôm nay"
+                                    value={props.searchTerm}
+                                    onChange={(e) => props.setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
                     </div>
+
                     <nav className="page-header__bottom">
                         <ul id="navigation" className="navigation">
                             <li className="navigation__item">
-                                {!isMobile
-                                    ?
+                                {!isMobile ? (
                                     <Popover
                                         className="popover-carts"
                                         placement="topRight"
                                         rootClassName="popover-carts"
                                         title={"Sản phẩm mới thêm"}
                                         content={contentPopover}
-                                        arrow={true}>
-                                        <Badge
-                                            count={carts?.length ?? 0}
-                                            size={"small"}
-                                            showZero
-                                        >
-                                            <FiShoppingCart className='icon-cart' />
+                                        arrow
+                                    >
+                                        <Badge count={carts?.length ?? 0} size="small" showZero>
+                                            <FiShoppingCart className="icon-cart" />
                                         </Badge>
                                     </Popover>
-                                    :
-                                    <Badge
-                                        count={carts?.length ?? 0}
-                                        size={"small"}
-                                        showZero
-                                        onClick={() => navigate("/order")}
-                                    >
-                                        <FiShoppingCart className='icon-cart' />
+                                ) : (
+                                    <Badge count={carts?.length ?? 0} size="small" showZero onClick={() => navigate("/order")}>
+                                        <FiShoppingCart className="icon-cart" />
                                     </Badge>
-                                }
+                                )}
                             </li>
-                            <li className="navigation__item mobile"><Divider type='vertical' /></li>
+
                             <li className="navigation__item mobile">
-                                {!isAuthenticated ?
-                                    <span onClick={() => navigate('/login')}> Đăng nhập/Đăng kí</span>
-                                    :
+                                <Divider type="vertical" />
+                            </li>
+
+                            <li className="navigation__item mobile">
+                                {!isAuthenticated ? (
+                                    <span onClick={() => navigate('/login')}>Đăng nhập/Đăng ký</span>
+                                ) : (
                                     <Dropdown menu={{ items }} trigger={['click']}>
-                                        <Space >
-                                            {/* <Avatar src={urlAvatar} /> */}
-                                            {user?.name}
-                                        </Space>
+                                        <Space>{user?.name}</Space>
                                     </Dropdown>
-                                }
+                                )}
                             </li>
                         </ul>
                     </nav>

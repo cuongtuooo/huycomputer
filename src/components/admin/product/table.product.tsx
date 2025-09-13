@@ -84,16 +84,23 @@ const TableProduct = () => {
             dataIndex: 'name',
             sorter: true
         },
+
         {
-            title: 'Nội dung sản phẩm',
-            dataIndex: 'mainText',
+            title: 'Số lượng',
+            dataIndex: 'quantity',
             sorter: true
         },
-        {
-            title: 'Mô tả chi tiết sản phẩm sản phẩm',
-            dataIndex: 'desc',
-            sorter: true
-        },
+        // {
+        //     title: 'Nội dung sản phẩm',
+        //     dataIndex: 'mainText',
+        //     sorter: true
+        // },
+        
+        // {
+        //     title: 'Mô tả chi tiết sản phẩm sản phẩm',
+        //     dataIndex: 'desc',
+        //     sorter: true
+        // },
         {
             title: 'Danh mục sản phẩm',
             dataIndex: ['category', 'name'],

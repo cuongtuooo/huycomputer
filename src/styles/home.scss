@@ -70,3 +70,125 @@
         }
     }
 }
+
+/* ===== Homepage Category Sections ===== */
+.sections-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.category-section {
+    padding: 8px 0 12px;
+
+    .category-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid #f0f0f0;
+        margin-bottom: 12px;
+        padding-bottom: 6px;
+
+        .category-title {
+            position: relative;
+            font-size: 18px;
+            font-weight: 700;
+            color: #222;
+            padding-left: 12px;
+            margin: 0;
+
+            &::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 2px;
+                width: 6px;
+                height: 18px;
+                background: #fadb14; // vệt vàng như ảnh mẫu
+                border-radius: 2px;
+            }
+        }
+
+        .see-all {
+            border: 0;
+            background: #1677ff;
+            color: #fff;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+
+            &:hover {
+                filter: brightness(0.95);
+            }
+        }
+    }
+}
+
+/* ===== Color tokens (đồng bộ với header) ===== */
+:root {
+    --primary: #105aa2;
+    /* xanh chủ đạo */
+    --primary-600: #0d4c89;
+    /* xanh đậm hơn một tông */
+    --bg-soft: #f6f8fa;
+    /* nền xám sáng như content */
+    --line: #eef0f2;
+}
+
+/* Topbar danh mục – nền sáng thay vì xanh đặc */
+.category-topbar {
+    background: var(--bg-soft);
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--line);
+}
+
+.category-topbar__inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Nhóm chip danh mục */
+.category-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.category-chip {
+    appearance: none;
+    border: 1px solid rgba(16, 90, 162, 0.18);
+    background: #fff;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    line-height: 1;
+    transition: all .15s ease;
+}
+
+.category-chip:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+/* Header của từng danh mục ở giữa – đổi vệt vàng sang primary cho khớp */
+.category-section .category-header .category-title::before {
+    background: var(--primary);
+}
+
+.category-section .see-all {
+    background: var(--primary);
+}
+
+.category-section .see-all:hover {
+    filter: brightness(.95);
+}

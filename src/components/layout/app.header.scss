@@ -1,160 +1,201 @@
+/* ===== Tokens ===== */
+:root {
+    --container-w: 1440px;
+    /* khớp với phần giữa */
+    --gap: 12px;
+    --brand: #61dafb;
+    --primary: #105aa2;
+    --text: #2f3640;
+    --muted: #808089;
+    --line: #eef0f2;
+}
+
+/* Nền trắng, viền dưới, sticky mượt */
 .header-container {
-    .page-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+}
+
+/* Khung header = container giữa */
+.page-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    /* trái: logo+search, phải: actions */
+    row-gap: var(--gap);
+    align-items: center;
+    color: var(--muted);
+    width: 100%;
+    max-width: var(--container-w);
+    margin: 0 auto;
+    padding: 8px 16px;
+    line-height: 1;
+
+    &__top {
         display: flex;
-        user-select: none;
-        -moz-user-select: none;
-        -webkit-user-select: none;
-        height: 55px;
-        color: #808089;
+        align-items: center;
+        gap: var(--gap);
+        /* bỏ width:70% để căn theo container – tránh lệch phần giữa */
         width: 100%;
-        max-width: 1440px;
-        margin: 0 auto;
-        line-height: 55px;
+    }
 
+    &__bottom {
+        display: flex;
+        justify-content: flex-end;
+    }
 
-        &__top {
-            display: flex;
-            width: 70%;
-            padding: 0 16px;
+    &__toggle {
+        display: none;
+        user-select: none;
+    }
+
+    .page-header__logo {
+        display: flex;
+        align-items: center;
+        gap: var(--gap);
+        flex: 1;
+        min-width: 0;
+        /* để input co giãn đúng */
+    }
+
+    /* Brand */
+    .logo {
+        color: var(--brand);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        white-space: nowrap;
+
+        .icon-react {
+            font-size: 26px;
+
+            &.rotate {
+                animation: spin 10s linear infinite;
+            }
         }
+    }
 
+    @keyframes spin {
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* SEARCH nhóm mới: icon absolute, input padding-left đều */
+    .search-group {
+        position: relative;
+        flex: 1;
+        /* ăn hết phần trống còn lại */
+        min-width: 260px;
+        /* không quá nhỏ trên desktop */
+        display: flex;
+    }
+
+    .icon-search {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        font-size: 18px;
+        color: #98a2b3;
+    }
+
+    .input-search {
+        height: 40px;
+        width: 100%;
+        padding: 0 14px 0 40px;
+        /* đủ chỗ cho icon-search */
+        border-radius: 999px;
+        /* pill */
+        border: 1px solid #e6eaf0;
+        outline: none;
+        color: var(--text);
+        transition: box-shadow .15s ease, border-color .15s ease;
+        background: #fff;
+
+        &:focus {
+            border-color: #b9d3ff;
+            box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12);
+        }
+    }
+}
+
+/* Actions (giỏ, user…) */
+.navigation {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 1;
+    height: auto;
+
+    &__item {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 4px;
+        opacity: .9;
+
+        &:hover {
+            opacity: 1;
+            cursor: pointer;
+        }
+    }
+
+    .icon-cart {
+        font-size: 20px;
+        position: relative;
+        color: var(--brand);
+    }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px) {
+    .page-header {
+        grid-template-columns: 1fr;
+
+        /* xếp dọc */
         &__bottom {
-            display: flex;
+            justify-content: flex-start;
         }
+    }
+}
 
-        &__toggle {
+@media (max-width: 600px) {
+    .page-header {
+        .logo {
             display: none;
         }
 
-        .page-header__top {
-            .page-header__logo {
-                display: flex;
-                width: 100%;
-                align-items: center;
-                gap: 10px;
-            }
-        }
-
-        .logo {
-            color: #61dafb;
-            cursor: pointer;
+        /* nhường chỗ cho search */
+        &__toggle {
             display: block;
-
-            .icon-react {
-                font-size: 30px;
-                position: relative;
-                top: 8px;
-                margin-right: 5px;
-
-
-                &.rotate {
-                    -webkit-animation: spin 10s linear infinite;
-                    -moz-animation: spin 10s linear infinite;
-                    animation: spin 10s linear infinite;
-
-                    @-moz-keyframes spin {
-                        100% {
-                            -moz-transform: rotate(360deg);
-                        }
-                    }
-
-                    @-webkit-keyframes spin {
-                        100% {
-                            -webkit-transform: rotate(360deg);
-                        }
-                    }
-
-                    @keyframes spin {
-                        100% {
-                            -webkit-transform: rotate(360deg);
-                            transform: rotate(360deg);
-                        }
-                    }
-                }
-            }
-
-            .icon-search {
-                position: relative;
-                left: 35px;
-            }
-
-
+            font-size: 2em;
+            margin-right: 8px;
         }
 
-        .input-search {
-            height: 25px;
-            outline: none;
-            padding: 5px 30px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            flex: 1;
+        .page-header__bottom {
+            flex-grow: 1;
         }
     }
 
     .navigation {
-        display: block;
-        opacity: 1;
-        height: auto;
-
-        &__item {
-            opacity: 0.8;
-            display: inline-block;
-            padding: 0 5px;
-
-            &:hover {
-                cursor: pointer;
-                opacity: 1;
-            }
-
-
+        &__item.mobile {
+            display: none;
         }
 
-        .icon-cart {
-            font-size: 20px;
-            top: 5px;
-            position: relative;
-            color: #61dafb;
-        }
+        /* giữ nguyên ý cũ */
     }
 
-    @media (max-width: 600px) {
-        .page-header {
-            display: flex;
+    .page-header .search-group {
+        min-width: 0;
+    }
 
-            .logo {
-                display: none;
-            }
-
-            &__toggle {
-                display: block;
-                font-size: 2em;
-                margin-right: 15px;
-            }
-
-            .page-header__bottom {
-                justify-content: center;
-                flex-grow: 1;
-            }
-        }
-
-        .navigation {
-            display: block;
-            opacity: 1;
-            height: auto;
-
-            &__item {
-                opacity: 0.8;
-                display: inline-block;
-
-                &:hover {
-                    cursor: pointer;
-                    opacity: 1;
-                }
-
-                &.mobile {
-                    display: none;
-                }
-            }
-        }
+    .page-header .input-search {
+        height: 36px;
     }
 }

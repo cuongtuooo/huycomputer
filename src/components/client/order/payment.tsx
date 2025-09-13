@@ -111,7 +111,7 @@ const Payment = (props: IProps) => {
                                         <div className='book-content'>
                                             <img src={`${import.meta.env.VITE_BACKEND_URL}/images/product/${item?.detail?.thumbnail}`} />
                                             <div className='title'>
-                                                {item?.detail?.mainText}
+                                                {item?.detail?.name}
                                             </div>
                                             <div className='price'>
                                                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentBookPrice)}

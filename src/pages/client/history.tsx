@@ -98,7 +98,7 @@ const HistoryPage = () => {
                     return (
                         <ul key={index}>
                             <li>
-                                Tên sách: {item.productName}
+                                Tên sách: {item.ProductName}
                             </li>
                             <li>
                                 Số lượng: {item.quantity}

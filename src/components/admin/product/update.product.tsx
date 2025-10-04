@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     App,
     Col, Divider, Form, Image, Input,
@@ -12,6 +12,8 @@ import { MAX_UPLOAD_IMAGE_SIZE } from '@/services/helper';
 import { UploadChangeParam } from 'antd/es/upload';
 import { UploadRequestOption as RcCustomRequestOptions } from 'rc-upload/lib/interface';
 import { v4 as uuidv4 } from 'uuid';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import TextArea from 'antd/es/input/TextArea';
 
 
@@ -63,6 +65,40 @@ const UpdateProduct = (props: IProps) => {
     const [fileListThumbnail, setFileListThumbnail] = useState<UploadFile[]>([]);
     const [fileListSlider, setFileListSlider] = useState<UploadFile[]>([]);
 
+    const [activeQuill, setActiveQuill] = useState<any>(null);
+
+
+    const quillMainRef = useRef<any>(null);
+    const quillDescRef = useRef<any>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+
+    const makeModules = (targetRef: any) => ({
+        toolbar: {
+            container: [
+                [{ header: [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ color: [] }, { background: [] }],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                [{ align: [] }],
+                ['link', 'image', 'clean'],
+            ],
+            handlers: {
+                image: () => {
+                    setActiveQuill(targetRef.current);
+                    imageInputRef.current?.click();
+                },
+            },
+        },
+    });
+
+    const quillModulesMain = useMemo(() => makeModules(quillMainRef), []);
+    const quillModulesDesc = useMemo(() => makeModules(quillDescRef), []);
+
+    const quillFormats = [
+        'header', 'bold', 'italic', 'underline', 'strike',
+        'color', 'background', 'list', 'bullet', 'align',
+        'link', 'image', 'clean'
+    ];
     useEffect(() => {
         const fetchCategory = async () => {
             const res = await getCategoryAPI();
@@ -295,7 +331,13 @@ const UpdateProduct = (props: IProps) => {
                                 name="mainText"
                                 rules={[{ required: true, message: 'Vui lòng nhập Nội dung sản phẩm' }]}
                             >
-                                <Input />
+                                <ReactQuill
+                                    ref={quillMainRef}
+                                    theme="snow"
+                                    modules={quillModulesMain}
+                                    formats={quillFormats}
+                                    placeholder="Nhập nội dung..."
+                                />
                             </Form.Item>
                         </Col>
 
@@ -306,7 +348,13 @@ const UpdateProduct = (props: IProps) => {
                                 name="desc"
                                 rules={[{ required: true, message: 'Vui lòng nhập Mô tả ' }]}
                             >
-                                <TextArea />
+                                <ReactQuill
+                                    ref={quillDescRef}
+                                    theme="snow"
+                                    modules={quillModulesDesc}
+                                    formats={quillFormats}
+                                    placeholder="Nhập mô tả chi tiết..."
+                                />
                             </Form.Item>
                         </Col>
                         <Col span={6}>

@@ -203,7 +203,7 @@ const ProductDetail = (props: IProps) => {
                         },
 
                         {
-                            title: 'Xem chi tiết sách',
+                            title: 'Xem chi tiết sản phẩm',
                         },
                     ]}
                 />

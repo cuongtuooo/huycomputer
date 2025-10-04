@@ -25,6 +25,7 @@ import viVN from 'antd/locale/vi_VN';
 import ManageProductPage from './pages/admin/manage.product';
 import ProductPage from './pages/client/product';
 import ManageCategoryPage from './pages/admin/manage.category';
+import OrderTrackingPage from './pages/client/order-tracking';
 
 const router = createBrowserRouter([
   {
@@ -44,6 +45,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <OrderPage />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: "/orders",
+        element: (
+          <ProtectedRoute>
+            <OrderTrackingPage />
           </ProtectedRoute>
         )
       },

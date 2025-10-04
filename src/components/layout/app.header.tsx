@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { FaReact } from 'react-icons/fa'
 import { FiShoppingCart } from 'react-icons/fi';
 import { VscSearchFuzzy } from 'react-icons/vsc';
-import { Divider, Badge, Drawer, Avatar, Popover, Empty } from 'antd';
+import { Divider, Badge, Drawer, Popover, Empty } from 'antd';
 import { Dropdown, Space } from 'antd';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './app.header.scss';
 import { Link } from 'react-router-dom';
 import { useCurrentApp } from 'components/context/app.context';
@@ -27,9 +27,9 @@ const AppHeader = (props: IProps) => {
     } = useCurrentApp();
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogout = async () => {
-        //todo
         const res = await logoutAPI();
         if (res.data) {
             setUser(null);
@@ -38,14 +38,32 @@ const AppHeader = (props: IProps) => {
             localStorage.removeItem("access_token");
             localStorage.removeItem("carts");
         }
-    }
+    };
+
+    // Click logo: về trang chủ hoặc reload
+    const handleLogoClick = () => {
+        // luôn reset ô tìm kiếm về rỗng
+        props.setSearchTerm('');
+
+        if (location.pathname === '/') {
+            // Đang ở trang chủ: chọn 1 trong 2 cách bên dưới
+
+            // Cách 1: reload mềm (react-router revalidate) – nhanh hơn
+            // navigate(0);
+
+            // Cách 2: reload cứng toàn trang – sạch mọi thứ
+            window.location.reload();
+        } else {
+            // Ở trang khác: chuyển về trang chủ
+            navigate('/');
+            // Scroll lên đầu cho đẹp
+            window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+        }
+    };
 
     let items = [
         {
-            label: <label
-                style={{ cursor: 'pointer' }}
-                onClick={() => setOpenManageAccount(true)}
-            >Quản lý tài khoản</label>,
+            label: <label style={{ cursor: 'pointer' }} onClick={() => setOpenManageAccount(true)}>Quản lý tài khoản</label>,
             key: 'account',
         },
         {
@@ -53,14 +71,15 @@ const AppHeader = (props: IProps) => {
             key: 'history',
         },
         {
-            label: <label
-                style={{ cursor: 'pointer' }}
-                onClick={() => handleLogout()}
-            >Đăng xuất</label>,
+            label: <Link to="/orders">Theo dõi đơn hàng</Link>,
+            key: 'orders'
+        },
+        {
+            label: <label style={{ cursor: 'pointer' }} onClick={() => handleLogout()}>Đăng xuất</label>,
             key: 'logout',
         },
-
     ];
+
     // @ts-expect-error
     if (user?.role.name === 'SUPER_ADMIN') {
         items.unshift({
@@ -68,9 +87,6 @@ const AppHeader = (props: IProps) => {
             key: 'admin',
         })
     }
-
-
-    // const urlAvatar = `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${user?.avatar}`;
 
     const contentPopover = () => {
         return (
@@ -93,9 +109,7 @@ const AppHeader = (props: IProps) => {
                         <button onClick={() => navigate('/order')}>Xem giỏ hàng</button>
                     </div>
                     :
-                    <Empty
-                        description="Không có sản phẩm trong giỏ hàng"
-                    />
+                    <Empty description="Không có sản phẩm trong giỏ hàng" />
                 }
             </div>
         )
@@ -108,14 +122,19 @@ const AppHeader = (props: IProps) => {
                     <div className="page-header__top">
                         <div className="page-header__toggle" onClick={() => setOpenDrawer(true)}>☰</div>
 
-                        <div onClick={() => window.location.reload()} className="page-header__logo">
-                            {/* Brand */}
-                            <span className="logo" onClick={() => navigate('/')}>
+                        <div className="page-header__logo">
+                            <span
+                                className="logo"
+                                onClick={() => {
+                                    props.setSearchTerm('');
+                                    window.location.href = "/";  // vừa về trang chủ vừa reload
+                                }}
+                            >
                                 <FaReact className="rotate icon-react" />
                                 Huy Computer
                             </span>
 
-                            {/* NHÓM SEARCH MỚI: icon nằm trong wrapper, input padding-left chuẩn */}
+                            {/* Search box */}
                             <div className="search-group">
                                 <VscSearchFuzzy className="icon-search" />
                                 <input
@@ -127,6 +146,7 @@ const AppHeader = (props: IProps) => {
                                 />
                             </div>
                         </div>
+
                     </div>
 
                     <nav className="page-header__bottom">
@@ -169,15 +189,15 @@ const AppHeader = (props: IProps) => {
                     </nav>
                 </header>
             </div>
+
             <Drawer
                 title="Menu chức năng"
                 placement="left"
                 onClose={() => setOpenDrawer(false)}
                 open={openDrawer}
             >
-                <p>Quản lý tài khoản</p>
+                <p onClick={() => setOpenManageAccount(true)}>Quản lý tài khoản</p>
                 <Divider />
-
                 <p onClick={() => handleLogout()}>Đăng xuất</p>
                 <Divider />
             </Drawer>
@@ -186,7 +206,6 @@ const AppHeader = (props: IProps) => {
                 isModalOpen={openManageAccount}
                 setIsModalOpen={setOpenManageAccount}
             />
-
         </>
     )
 };

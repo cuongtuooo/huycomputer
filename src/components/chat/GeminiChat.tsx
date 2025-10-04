@@ -4,36 +4,57 @@ import { getProductsAPI, getCategoryAPI } from "@/services/api";
 type Msg = { role: "user" | "model"; text: string; products?: ProductCard[] };
 type ProductCard = { id: string; name: string; price: number; thumbnail?: string; url: string };
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "PASTE_KEY_IF_YOU_MUST";
-const MODEL = "gemini-1.5-flash-latest";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+const MODEL = "gemini-2.5-flash";   // 👈 lấy từ listModels
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent`;
+
 
 async function gemini(prompt: string) {
     const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] }),
+        body: JSON.stringify({
+            contents: [
+                {
+                    role: "user",
+                    parts: [{ text: prompt }],
+                },
+            ],
+        }),
     });
-    if (!res.ok) throw new Error(await res.text());
+
+    if (!res.ok) {
+        const errText = await res.text();
+        console.error("Gemini error:", errText);
+        throw new Error(errText);
+    }
     const data = await res.json();
     return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }
 
 function vnd(n: number) {
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(n ?? 0);
+    return new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0,
+    }).format(n ?? 0);
 }
-const strip = (s = "") => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+const strip = (s = "") =>
+    s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
 
 export default function GeminiChat() {
     const [open, setOpen] = useState(false);
     const [input, setInput] = useState("");
     const [msgs, setMsgs] = useState<Msg[]>([
-        { role: "model", text: "Chào bạn! Mô tả nhu cầu (ngân sách, hãng, kích thước...) để mình gợi ý sản phẩm phù hợp nhé." },
+        {
+            role: "model",
+            text: "Chào bạn! Mô tả nhu cầu (ngân sách, hãng, kích thước...) để mình gợi ý sản phẩm phù hợp nhé.",
+        },
     ]);
     const [loading, setLoading] = useState(false);
     const listRef = useRef<HTMLDivElement>(null);
 
-    // Danh mục thực (map tên -> id) + danh sách tên để đưa cho Gemini
+    // Danh mục
     const [catMap, setCatMap] = useState<Record<string, string>>({});
     const [catNames, setCatNames] = useState<string[]>([]);
     useEffect(() => {
@@ -58,30 +79,30 @@ export default function GeminiChat() {
         if (open) listRef.current?.scrollTo({ top: 999999, behavior: "smooth" });
     }, [msgs, open]);
 
+    // === Search sản phẩm với fallback ===
     // === TÌM SẢN PHẨM VỚI NHIỀU Fallback ===
     async function searchWithFallback(plan: any) {
-        const limit = Math.min(8, Number(plan?.limit) || 6);
+        const limit = Math.min(20, Number(plan?.limit) || 10); // tăng limit lên 20
 
-        // 1) build query chặt chẽ nhất
+        // 1) query đầy đủ nhất
         let q1 = `current=1&pageSize=${limit}`;
         if (plan?.keywords) q1 += `&mainText=/${encodeURIComponent(plan.keywords)}/i`;
+
         // map danh mục (fuzzy)
         const askedCats: string[] = Array.isArray(plan?.categories) ? plan.categories : [];
-        const catIds = askedCats
-            .map((n) => catMap[strip(n)])
-            .filter(Boolean);
+        const catIds = askedCats.map((n) => catMap[strip(n)]).filter(Boolean);
         if (catIds.length) q1 += `&category=${catIds.join(",")}`;
         if (Number(plan?.minPrice) > 0) q1 += `&price>=${Number(plan.minPrice)}`;
         if (Number(plan?.maxPrice) > 0) q1 += `&price<=${Number(plan.maxPrice)}`;
         if (plan?.sort) q1 += `&sort=${plan.sort}`;
 
-        // 2) nới lỏng: bỏ price nếu rỗng
+        // 2) bỏ price nếu fail
         let q2 = q1.replace(/&price>=[^&]*/g, "").replace(/&price<=[^&]*/g, "");
 
-        // 3) nới lỏng tiếp: bỏ category
+        // 3) bỏ category nếu fail
         let q3 = q2.replace(/&category=[^&]*/g, "");
 
-        // 4) fallback cuối: top bán chạy toàn shop
+        // 4) fallback: bán chạy toàn shop
         const q4 = `current=1&pageSize=${limit}&sort=-sold`;
 
         const qList = [q1, q2, q3, q4];
@@ -94,16 +115,22 @@ export default function GeminiChat() {
                         id: p._id,
                         name: p.name || p.mainText,
                         price: p.price,
-                        thumbnail: p.thumbnail ? `${import.meta.env.VITE_BACKEND_URL}/images/Product/${p.thumbnail}` : undefined,
+                        thumbnail: p.thumbnail
+                            ? `${import.meta.env.VITE_BACKEND_URL}/images/Product/${p.thumbnail}`
+                            : undefined,
                         url: `/Product/${p._id}`,
                     })) || [];
-                if (items.length) return items;
+
+                console.log("Query:", q, "=>", items.length, "sản phẩm"); // debug log
+
+                if (items.length) return items; // nếu có sản phẩm thì trả về luôn
             } catch (e) {
                 console.warn("search products failed", q, e);
             }
         }
         return [];
     }
+
 
     const send = async () => {
         const text = input.trim();
@@ -113,7 +140,7 @@ export default function GeminiChat() {
         setLoading(true);
 
         try {
-            // 1) Lấy plan từ Gemini, NHỚ truyền danh mục thật để nó chọn đúng
+            // 1) Lấy plan từ Gemini (phân tích câu hỏi)
             const planText = await gemini(
                 `Bạn là bộ phân tích truy vấn cho website bán hàng.
 Danh mục hiện có của shop: ${catNames.join(", ")}.
@@ -132,12 +159,16 @@ Người dùng: ${text}`
             );
 
             let plan: any = {};
-            try { plan = JSON.parse(planText); } catch { plan = { intent: "qa", keywords: text }; }
+            try {
+                plan = JSON.parse(planText);
+            } catch {
+                plan = { intent: "qa", keywords: text };
+            }
 
-            // 2) Tìm sản phẩm với nhiều tầng fallback
+            // 2) Luôn fetch sản phẩm mới nhất từ API
             const products = await searchWithFallback(plan);
 
-            // 3) Nhờ Gemini tư vấn dựa trên kết quả đã TÌM ĐƯỢC
+            // 3) Nhờ Gemini tư vấn dựa trên danh sách đã fetch được
             const advisory = await gemini(
                 `Bạn là trợ lý bán hàng.
 Dựa trên danh sách sản phẩm (JSON) bên dưới và yêu cầu khách, hãy tư vấn ngắn gọn (3–6 câu), so sánh nhanh nếu cần.
@@ -162,37 +193,151 @@ Sản phẩm (JSON): ${JSON.stringify(products)}`
         }
     };
 
+
     const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            send();
+        }
     };
 
     /* --------- UI styles (inline) ---------- */
-    const wrap: React.CSSProperties = { position: "fixed", right: 20, bottom: 20, zIndex: 9999, fontFamily: 'Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial' };
-    const button: React.CSSProperties = { width: 56, height: 56, borderRadius: 999, border: "none", cursor: "pointer", background: "linear-gradient(135deg,#105aa2,#1677ff)", color: "#fff", boxShadow: "0 10px 24px rgba(0,0,0,.15)", fontWeight: 800, fontSize: 22 };
-    const panel: React.CSSProperties = { width: 360, height: 560, background: "#fff", border: "1px solid #eef0f2", boxShadow: "0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06)", borderRadius: 16, overflow: "hidden" };
-    const header: React.CSSProperties = { height: 52, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", background: "#105aa2", color: "#fff", fontWeight: 700 };
-    const list: React.CSSProperties = { height: 560 - 52 - 92, overflowY: "auto", padding: 12, background: "#f6f8fa" };
+    const wrap: React.CSSProperties = {
+        position: "fixed",
+        right: 20,
+        bottom: 20,
+        zIndex: 9999,
+        fontFamily: "Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial",
+    };
+    const button: React.CSSProperties = {
+        width: 56,
+        height: 56,
+        borderRadius: 999,
+        border: "none",
+        cursor: "pointer",
+        background: "linear-gradient(135deg,#105aa2,#1677ff)",
+        color: "#fff",
+        boxShadow: "0 10px 24px rgba(0,0,0,.15)",
+        fontWeight: 800,
+        fontSize: 22,
+    };
+    const panel: React.CSSProperties = {
+        width: 360,
+        height: 560,
+        background: "#fff",
+        border: "1px solid #eef0f2",
+        boxShadow: "0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06)",
+        borderRadius: 16,
+        overflow: "hidden",
+    };
+    const header: React.CSSProperties = {
+        height: 52,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 14px",
+        background: "#105aa2",
+        color: "#fff",
+        fontWeight: 700,
+    };
+    const list: React.CSSProperties = {
+        height: 560 - 52 - 92,
+        overflowY: "auto",
+        padding: 12,
+        background: "#f6f8fa",
+    };
     const bubble = (role: Msg["role"]): React.CSSProperties => ({
-        maxWidth: "84%", padding: "10px 12px", borderRadius: 12, margin: "6px 0", whiteSpace: "pre-wrap", lineHeight: "20px",
+        maxWidth: "84%",
+        padding: "10px 12px",
+        borderRadius: 12,
+        margin: "6px 0",
+        whiteSpace: "pre-wrap",
+        lineHeight: "20px",
         ...(role === "user"
-            ? { marginLeft: "auto", background: "rgba(22,119,255,.12)", color: "#105aa2", border: "1px solid rgba(22,119,255,.24)" }
-            : { background: "#fff", color: "#2f3640", border: "1px solid #eef0f2" }),
+            ? {
+                marginLeft: "auto",
+                background: "rgba(22,119,255,.12)",
+                color: "#105aa2",
+                border: "1px solid rgba(22,119,255,.24)",
+            }
+            : {
+                background: "#fff",
+                color: "#2f3640",
+                border: "1px solid #eef0f2",
+            }),
     });
-    const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "1fr", gap: 8, marginTop: 6 };
-    const card: React.CSSProperties = { display: "grid", gridTemplateColumns: "64px 1fr", gap: 10, alignItems: "center", padding: 8, border: "1px solid #eef0f2", borderRadius: 10, background: "#fff" };
-    const inputWrap: React.CSSProperties = { padding: 12, borderTop: "1px solid #eef0f2", background: "#fff" };
-    const textarea: React.CSSProperties = { width: "100%", minHeight: 44, maxHeight: 90, padding: "10px 12px", borderRadius: 10, border: "1px solid #e6eaf0", outline: "none", resize: "vertical", fontSize: 14 };
-    const sendBtn: React.CSSProperties = { marginTop: 8, width: "100%", height: 36, borderRadius: 10, border: "none", background: "#105aa2", color: "#fff", fontWeight: 700, cursor: "pointer", opacity: loading ? 0.7 : 1 };
+    const grid: React.CSSProperties = {
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        gap: 8,
+        marginTop: 6,
+    };
+    const card: React.CSSProperties = {
+        display: "grid",
+        gridTemplateColumns: "64px 1fr",
+        gap: 10,
+        alignItems: "center",
+        padding: 8,
+        border: "1px solid #eef0f2",
+        borderRadius: 10,
+        background: "#fff",
+    };
+    const inputWrap: React.CSSProperties = {
+        padding: 12,
+        borderTop: "1px solid #eef0f2",
+        background: "#fff",
+    };
+    const textarea: React.CSSProperties = {
+        width: "100%",
+        minHeight: 44,
+        maxHeight: 90,
+        padding: "10px 12px",
+        borderRadius: 10,
+        border: "1px solid #e6eaf0",
+        outline: "none",
+        resize: "vertical",
+        fontSize: 14,
+    };
+    const sendBtn: React.CSSProperties = {
+        marginTop: 8,
+        width: "100%",
+        height: 36,
+        borderRadius: 10,
+        border: "none",
+        background: "#105aa2",
+        color: "#fff",
+        fontWeight: 700,
+        cursor: "pointer",
+        opacity: loading ? 0.7 : 1,
+    };
 
     return (
         <div style={wrap}>
             {!open ? (
-                <button style={button} title="Chat với Gemini" onClick={() => setOpen(true)}>⟮💬⟯</button>
+                <button
+                    style={button}
+                    title="Chat với Gemini"
+                    onClick={() => setOpen(true)}
+                >
+                    ⟮💬⟯
+                </button>
             ) : (
                 <div style={panel}>
                     <div style={header}>
-                            <span>Hỗ trợ khách hàng tự động</span>
-                        <button onClick={() => setOpen(false)} style={{ background: "transparent", border: "none", color: "#fff", fontSize: 20, cursor: "pointer" }} title="Thu gọn">✕</button>
+                        <span>Hỗ trợ khách hàng tự động</span>
+                        <button
+                            onClick={() => setOpen(false)}
+                            style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "#fff",
+                                fontSize: 20,
+                                cursor: "pointer",
+                            }}
+                            title="Thu gọn"
+                        >
+                            ✕
+                        </button>
                     </div>
 
                     <div ref={listRef} style={list}>
@@ -202,16 +347,64 @@ Sản phẩm (JSON): ${JSON.stringify(products)}`
                                 {!!m.products?.length && (
                                     <div style={grid}>
                                         {m.products.map((p) => (
-                                            <a key={p.id} href={p.url} style={{ textDecoration: "none", color: "inherit" }}>
+                                            <a
+                                                key={p.id}
+                                                href={p.url}
+                                                style={{ textDecoration: "none", color: "inherit" }}
+                                            >
                                                 <div style={card}>
-                                                    <div style={{ width: 64, height: 64, borderRadius: 8, background: "#f6f8fa", display: "grid", placeItems: "center", overflow: "hidden" }}>
+                                                    <div
+                                                        style={{
+                                                            width: 64,
+                                                            height: 64,
+                                                            borderRadius: 8,
+                                                            background: "#f6f8fa",
+                                                            display: "grid",
+                                                            placeItems: "center",
+                                                            overflow: "hidden",
+                                                        }}
+                                                    >
                                                         {p.thumbnail ? (
-                                                            <img src={p.thumbnail} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                                        ) : (<span style={{ fontSize: 12, color: "#98a2b3" }}>No image</span>)}
+                                                            <img
+                                                                src={p.thumbnail}
+                                                                alt={p.name}
+                                                                style={{
+                                                                    width: "100%",
+                                                                    height: "100%",
+                                                                    objectFit: "cover",
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <span
+                                                                style={{ fontSize: 12, color: "#98a2b3" }}
+                                                            >
+                                                                No image
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <div>
-                                                        <div style={{ fontWeight: 600, fontSize: 14, lineHeight: "18px", display: "-webkit-box", WebkitBoxOrient: "vertical" as any, WebkitLineClamp: 2, overflow: "hidden" }}>{p.name}</div>
-                                                        <div style={{ color: "#105aa2", fontWeight: 700, marginTop: 2 }}>{vnd(p.price)}</div>
+                                                        <div
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                fontSize: 14,
+                                                                lineHeight: "18px",
+                                                                display: "-webkit-box",
+                                                                WebkitBoxOrient: "vertical" as any,
+                                                                WebkitLineClamp: 2,
+                                                                overflow: "hidden",
+                                                            }}
+                                                        >
+                                                            {p.name}
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                color: "#105aa2",
+                                                                fontWeight: 700,
+                                                                marginTop: 2,
+                                                            }}
+                                                        >
+                                                            {vnd(p.price)}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </a>
@@ -231,7 +424,9 @@ Sản phẩm (JSON): ${JSON.stringify(products)}`
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={onKey}
                         />
-                        <button onClick={send} style={sendBtn} disabled={loading}>Gửi</button>
+                        <button onClick={send} style={sendBtn} disabled={loading}>
+                            Gửi
+                        </button>
                     </div>
                 </div>
             )}

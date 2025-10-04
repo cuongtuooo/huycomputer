@@ -7,6 +7,7 @@ import { useCurrentApp } from '@/components/context/app.context';
 import type { FormProps } from 'antd';
 import { createOrderAPI } from '@/services/api';
 import { isMobile } from 'react-device-detect';
+import { useNavigate } from 'react-router-dom';
 
 const { TextArea } = Input;
 
@@ -31,6 +32,7 @@ const Payment = (props: IProps) => {
     const [isSubmit, setIsSubmit] = useState(false);
     const { message, notification } = App.useApp();
     const { setCurrentStep } = props;
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (user) {
@@ -72,7 +74,7 @@ const Payment = (props: IProps) => {
         const detail = carts.map(item => ({
             _id: item._id,
             quantity: item.quantity,
-            productName: item.detail.mainText
+            productName: item.detail.name
         }))
 
         setIsSubmit(true);
@@ -83,7 +85,7 @@ const Payment = (props: IProps) => {
             localStorage.removeItem("carts");
             setCarts([]);
             message.success('Mua hàng thành công!');
-            setCurrentStep(2);
+            navigate('/orders', { replace: true });
         } else {
             notification.error({
                 message: "Có lỗi xảy ra",
@@ -133,7 +135,7 @@ const Payment = (props: IProps) => {
                                     </>
                                     :
                                     <>
-                                        <div>{item?.detail?.mainText}</div>
+                                        <div>{item?.detail?.name}</div>
                                         <div className='book-content ' style={{ width: "100%" }}>
                                             <img src={`${import.meta.env.VITE_BACKEND_URL}/images/product/${item?.detail?.thumbnail}`} />
                                             <div className='action' >

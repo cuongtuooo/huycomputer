@@ -4,6 +4,7 @@ import type { GetProp, UploadFile, UploadProps } from 'antd';
 import dayjs from "dayjs";
 import { FORMATE_DATE_VN } from "@/services/helper";
 import { v4 as uuidv4 } from 'uuid';
+import DOMPurify from 'dompurify';
 import { getCategoryAPI } from "@/services/api";
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
@@ -115,8 +116,16 @@ const DetailProduct = (props: IProps) => {
                 >
                     <Descriptions.Item label="Id">{dataViewDetail?._id}</Descriptions.Item>
                     <Descriptions.Item label="Tên sản phẩm">{dataViewDetail?.name}</Descriptions.Item>
-                    <Descriptions.Item label="Chức năng chính sản phẩm">{dataViewDetail?.mainText}</Descriptions.Item>
-                    <Descriptions.Item label="Mô tả chi tiết sản phẩm">{dataViewDetail?.desc}</Descriptions.Item>
+                    <Descriptions.Item  label="Chức năng chính sản phẩm">
+                        <div dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(dataViewDetail?.mainText || '', { USE_PROFILES: { html: true } })
+                        }}></div>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Mô tả chi tiết sản phẩm">
+                        <div dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(dataViewDetail?.desc || '', { USE_PROFILES: { html: true } })
+                        }}></div>
+                    </Descriptions.Item>
                     <Descriptions.Item label="Giá tiền">{
                         new Intl.NumberFormat('vi-VN',
                             { style: 'currency', currency: 'VND' })

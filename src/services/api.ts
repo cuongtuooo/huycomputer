@@ -200,6 +200,25 @@ export const getOrdersAPI = (query: string) => {
     return axios.get<IBackendRes<IModelPaginate<IOrderTable>>>(urlBackend)
 }
 
+export const adminUpdateOrderStatusAPI = (
+    orderId: string,
+    status: 'SHIPPING' | 'DELIVERED'
+) => {
+    const urlBackend = `/api/v1/order/${orderId}/admin-status`;
+    return axios.patch<IBackendRes<any>>(urlBackend, { status });
+};
+
+
+export const cancelMyOrderAPI = (orderId: string) => {
+    const urlBackend = `/api/v1/order/${orderId}/cancel`;
+    return axios.patch<IBackendRes<any>>(urlBackend);
+};
+
+export const confirmOrderReceivedAPI = (orderId: string) => {
+    const urlBackend = `/api/v1/order/${orderId}/confirm-received`;
+    return axios.patch<IBackendRes<any>>(urlBackend);
+};
+
 export const getDashboardAPI = () => {
     const urlBackend = `/api/v1/dashboard`;
     return axios.get<IBackendRes<{

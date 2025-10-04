@@ -106,7 +106,7 @@ const UserInfo = () => {
     return (
         <div style={{ minHeight: 400 }}>
             <Row>
-                <Col sm={24} md={12}>
+                {/* <Col sm={24} md={12}>
                     <Row gutter={[30, 30]}>
                         <Col span={24}>
                             <Avatar
@@ -124,7 +124,7 @@ const UserInfo = () => {
                             </Upload>
                         </Col>
                     </Row>
-                </Col>
+                </Col> */}
                 <Col sm={24} md={12}>
                     <Form
                         onFinish={onFinish}
@@ -170,7 +170,7 @@ const UserInfo = () => {
 
                         <Form.Item<FieldType>
                             labelCol={{ span: 24 }}
-                            label="RRole"
+                            label="Role"
                             name="role"
                             rules={[{ required: true, message: 'role thoại không được để trống!' }]}
                         >

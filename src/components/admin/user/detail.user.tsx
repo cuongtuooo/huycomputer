@@ -39,9 +39,6 @@ const DetailUser = (props: IProps) => {
                     <Descriptions.Item label="Role">
                         <Badge status="processing" text={dataViewDetail?.role} />
                     </Descriptions.Item>
-                    <Descriptions.Item label="Avatar">
-                        <Avatar size={40} src={avatarURL}></Avatar>
-                    </Descriptions.Item>
                     <Descriptions.Item label="Created At">
                         {dayjs(dataViewDetail?.createdAt).format(FORMATE_DATE_VN)}
                     </Descriptions.Item>

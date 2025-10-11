@@ -30,14 +30,16 @@ const UserInfo = () => {
 
     useEffect(() => {
         if (user) {
+            console.log("SET FIELD GIÁ TRỊ USER: ", user)
             form.setFieldsValue({
                 _id: user._id,
                 email: user.email,
-                phone: user.phone,
+                phone: user.phone??"",
                 name: user.name,
                 // @ts-ignore
                 role: user.role._id
             })
+            console.log("AFTER SET:", form.getFieldsValue())
         }
     }, [user])
 

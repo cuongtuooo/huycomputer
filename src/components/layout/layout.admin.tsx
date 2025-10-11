@@ -37,18 +37,18 @@ const LayoutAdmin = () => {
             icon: <AppstoreOutlined />,
 
         },
-        // {
-        //     label: <span>Manage Users</span>,
-        //     key: '/admin/user',
-        //     icon: <UserOutlined />,
-        //     children: [
-        //         {
-        //             label: <Link to='/admin/user'>CRUD</Link>,
-        //             key: '/admin/user',
-        //             icon: <TeamOutlined />,
-        //         },
-        //     ]
-        // },
+        {
+            label: <span>Manage Users</span>,
+            key: '/admin/user',
+            icon: <UserOutlined />,
+            children: [
+                {
+                    label: <Link to='/admin/user'>CRUD</Link>,
+                    key: '/admin/user',
+                    icon: <TeamOutlined />,
+                },
+            ]
+        },
         {
             label: <Link to='/admin/product'>Manage Product</Link>,
             key: '/admin/product',

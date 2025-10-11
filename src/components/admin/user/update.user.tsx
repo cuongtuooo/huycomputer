@@ -41,8 +41,9 @@ const UpdateUser = (props: IProps) => {
 
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
         const { _id, name, phone } = values;
+        const email = dataUpdate?.email;
         setIsSubmit(true)
-        const res = await updateUserAPI(_id, name, phone);
+        const res = await updateUserAPI(_id, name, phone, email!);
         if (res && res.data) {
             message.success('Cập nhật user thành công');
             form.resetFields();

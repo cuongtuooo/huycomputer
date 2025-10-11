@@ -130,7 +130,11 @@ const AppHeader = (props: IProps) => {
                                     window.location.href = "/";  // vừa về trang chủ vừa reload
                                 }}
                             >
-                                <FaReact className="rotate icon-react" />
+                                {/* <FaReact className="rotate icon-react" /> */}
+                                <img style={{
+                                    display:"block",
+                                    width: "40px",
+                                }} src="logoimg/logomain.png" alt="" />
                                 Huy Computer
                             </span>
 

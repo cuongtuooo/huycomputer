@@ -50,14 +50,14 @@ export const bulkCreateUserAPI = (hoidanit: {
     return axios.post<IBackendRes<IResponseImport>>(urlBackend, hoidanit)
 }
 
-export const updateUserAPI = (_id: string, name: string, phone: string) => {
+export const updateUserAPI = (_id: string, name: string, phone: string, email: string) => {
     const urlBackend = `/api/v1/users`;
     return axios.patch<IBackendRes<IRegister>>(urlBackend,
-        { _id, name, phone })
+        { _id, name, phone, email })
 }
 
 export const deleteUserAPI = (_id: string) => {
-    const urlBackend = `/api/v1/user/${_id}`;
+    const urlBackend = `/api/v1/users/${_id}`;
     return axios.delete<IBackendRes<IRegister>>(urlBackend)
 }
 

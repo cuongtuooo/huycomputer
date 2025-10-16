@@ -1,0 +1,147 @@
+/* ===========================
+   🎨 GIAO DIỆN CHUNG ADMIN
+   =========================== */
+
+.layout-admin {
+    background-color: #f5f7fa !important;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.layout-admin .ant-layout-sider {
+    background: #fff;
+    border-right: 1px solid #e5e5e5;
+    transition: all 0.3s ease;
+}
+
+.layout-admin .ant-layout-sider .ant-menu {
+    border-inline-end: none;
+}
+
+.layout-admin .ant-menu-light .ant-menu-item-selected {
+    background-color: #1677ff !important;
+    color: #fff !important;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.layout-admin .ant-menu-light .ant-menu-item:hover {
+    background-color: #e6f4ff;
+    border-radius: 6px;
+}
+
+/* Header admin */
+.layout-admin .admin-header {
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    font-size: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.layout-admin .admin-header .trigger {
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.layout-admin .admin-header .trigger:hover {
+    color: #1677ff;
+}
+
+/* Footer admin */
+.layout-admin .ant-layout-footer {
+    background: #fff;
+    font-size: 14px;
+    color: #888;
+    border-top: 1px solid #eee;
+}
+
+/* ===========================
+   📊 DASHBOARD
+   =========================== */
+.admin-dashboard {
+    padding: 10px 20px;
+
+    .ant-card {
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: none;
+    }
+
+    .ant-statistic-title {
+        font-size: 15px;
+        color: #666;
+    }
+
+    .ant-statistic-content-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .ant-row {
+        margin-top: 10px;
+    }
+
+    .ant-card-head-title {
+        font-weight: 600;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .ant-table {
+        font-size: 14px;
+        border-radius: 8px;
+
+        .ant-table-thead>tr>th {
+            background: #fafafa;
+            font-weight: 600;
+            color: #444;
+            text-transform: uppercase;
+        }
+
+        .ant-table-tbody>tr:hover>td {
+            background: #f0f9ff;
+        }
+    }
+
+    /* Tag màu trạng thái */
+    .ant-tag {
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 2px 8px;
+    }
+
+    /* Card hàng đầu (Doanh thu, Đơn hàng, Sản phẩm...) */
+    .ant-card-bordered {
+        border: none;
+    }
+}
+
+/* ===========================
+   🧭 SIDEBAR RESPONSIVE
+   =========================== */
+@media (max-width: 991px) {
+    .layout-admin .ant-layout-sider {
+        position: fixed;
+        z-index: 1000;
+        height: 100vh;
+    }
+
+    .layout-admin .ant-layout-content {
+        padding: 10px;
+    }
+}
+
+/* ===========================
+   ✨ HIỆU ỨNG NHẸ
+   =========================== */
+.ant-card {
+    transition: all 0.25s ease;
+}
+
+.ant-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}

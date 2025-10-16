@@ -15,6 +15,8 @@ import { Link } from 'react-router-dom';
 import { useCurrentApp } from '../context/app.context';
 import type { MenuProps } from 'antd';
 import { logoutAPI } from '@/services/api';
+import "styles/admin-dashboard.scss";
+
 type MenuItem = Required<MenuProps>['items'][number];
 
 const { Content, Footer, Sider } = Layout;
@@ -32,35 +34,35 @@ const LayoutAdmin = () => {
 
     const items: MenuItem[] = [
         {
-            label: <Link to='/admin'>Dashboard</Link>,
+            label: <Link to='/admin'>Tổng Quan</Link>,
             key: '/admin',
             icon: <AppstoreOutlined />,
 
         },
         {
-            label: <span>Manage Users</span>,
+            label: <span>Quản lý tài khoản</span>,
             key: '/admin/user',
             icon: <UserOutlined />,
             children: [
                 {
-                    label: <Link to='/admin/user'>CRUD</Link>,
+                    label: <Link to='/admin/user'>tài khoản</Link>,
                     key: '/admin/user',
                     icon: <TeamOutlined />,
                 },
             ]
         },
         {
-            label: <Link to='/admin/product'>Manage Product</Link>,
+            label: <Link to='/admin/product'>Quản lý sản phẩm</Link>,
             key: '/admin/product',
             icon: <ExceptionOutlined />
         },
         {
-            label: <Link to='/admin/category'>Manage category</Link>,
+            label: <Link to='/admin/category'>Quản lý danh mục</Link>,
             key: '/admin/category',
             icon: <ExceptionOutlined />
         },
         {
-            label: <Link to='/admin/order'>Manage Orders</Link>,
+            label: <Link to='/admin/order'>Quản lý đơn hàng</Link>,
             key: '/admin/order',
             icon: <DollarCircleOutlined />
         },

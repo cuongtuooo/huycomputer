@@ -78,7 +78,7 @@ const TableUser = () => {
             },
         },
         {
-            title: 'Full Name',
+            title: 'Họ Tên đầy đủ',
             dataIndex: 'name',
         },
         {
@@ -87,7 +87,7 @@ const TableUser = () => {
             copyable: true,
         },
         {
-            title: 'Created At',
+            title: 'Ngày tạo',
             dataIndex: 'createdAt',
             valueType: 'date',
             sorter: true,
@@ -101,7 +101,7 @@ const TableUser = () => {
         },
 
         {
-            title: 'Action',
+            title: 'Hành động',
             hideInSearch: true,
             render(dom, entity, index, action, schema) {
                 return (

@@ -86,7 +86,7 @@ const TableProduct = () => {
         },
 
         {
-            title: 'Số lượng',
+            title: 'Tồn kho',
             dataIndex: 'quantity',
             sorter: true
         },

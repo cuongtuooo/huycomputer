@@ -1,5 +1,17 @@
 import { getDashboardAPI } from "@/services/api";
 import { Card, Col, Row, Statistic, Table, Tag } from "antd";
+import {
+    DollarOutlined,
+    ShoppingCartOutlined,
+    AppstoreOutlined,
+    TagsOutlined,
+    CoffeeOutlined,
+    LaptopOutlined,
+    GiftOutlined,
+    HomeOutlined,
+    NumberOutlined,
+    ToolOutlined,
+} from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import CountUp from "react-countup";
 
@@ -25,14 +37,53 @@ const AdminDashboard = () => {
 
     const formatter = (value: any) => <CountUp end={value} separator="," />;
 
+    // Icon theo tên danh mục (tùy biến thêm nếu bạn có nhiều danh mục)
+    const getCategoryIcon = (name?: string) => {
+        const key = (name || "").toLowerCase().trim();
+        const commonStyle = { fontSize: 18 };
+
+        if (key.includes("điện") || key.includes("electronics") || key.includes("tech"))
+            return <LaptopOutlined style={{ ...commonStyle, color: "#1677ff" }} />;
+
+        if (key.includes("đồ ăn") || key.includes("thực phẩm") || key.includes("food"))
+            return <CoffeeOutlined style={{ ...commonStyle, color: "#52c41a" }} />;
+
+        if (key.includes("phụ kiện") || key.includes("accessory"))
+            return <ToolOutlined style={{ ...commonStyle, color: "#fa8c16" }} />;
+
+        if (key.includes("quà") || key.includes("gift"))
+            return <GiftOutlined style={{ ...commonStyle, color: "#eb2f96" }} />;
+
+        if (key.includes("gia dụng") || key.includes("nhà"))
+            return <HomeOutlined style={{ ...commonStyle, color: "#722ed1" }} />;
+
+        // mặc định
+        return <TagsOutlined style={{ ...commonStyle, color: "#595959" }} />;
+    };
+
     // ========================== BẢNG: Thống kê danh mục ==========================
     const columnsCategories = [
-        { title: "Tên danh mục", dataIndex: "categoryName", key: "categoryName" },
+        {
+            title: "Tên danh mục",
+            dataIndex: "categoryName",
+            key: "categoryName",
+            render: (text: string) => (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {getCategoryIcon(text)}
+                    <span>{text}</span>
+                </div>
+            ),
+        },
         {
             title: "Số lượng sản phẩm",
             dataIndex: "productCount",
             key: "productCount",
-            render: (v: number) => v.toLocaleString(),
+            render: (v: number) => (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <NumberOutlined style={{ fontSize: 16, color: "#1677ff" }} />
+                    <span>{v.toLocaleString()}</span>
+                </div>
+            ),
         },
     ];
 
@@ -97,52 +148,86 @@ const AdminDashboard = () => {
         { title: "Tồn kho", dataIndex: "quantity", key: "quantity" },
     ];
 
+    // ========================== CARD ICON STYLE ==========================
+    const iconBoxStyle = {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 50,
+        height: 50,
+        borderRadius: 12,
+    };
+
     return (
-        <div style={{ padding: 10 }}>
-            {/* 4 ô thống kê tổng */}
+        <div className="admin-dashboard" style={{ padding: 10 }}>
+            {/* 4 ô thống kê tổng có icon */}
             <Row gutter={[30, 30]}>
+                {/* Doanh thu */}
                 <Col xs={24} sm={12} md={6}>
                     <Card bordered={false}>
-                        <Statistic
-                            title="Tổng doanh thu (VNĐ)"
-                            value={dataDashboard.totalRevenue}
-                            formatter={formatter}
-                        />
+                        <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+                            <div style={{ ...iconBoxStyle, background: "#f6ffed" }}>
+                                <DollarOutlined style={{ fontSize: 28, color: "#52c41a" }} />
+                            </div>
+                            <Statistic
+                                title="Tổng doanh thu (VNĐ)"
+                                value={dataDashboard.totalRevenue}
+                                formatter={formatter}
+                            />
+                        </div>
                     </Card>
                 </Col>
 
+                {/* Đơn hàng */}
                 <Col xs={24} sm={12} md={6}>
                     <Card bordered={false}>
-                        <Statistic
-                            title="Tổng đơn hàng"
-                            value={dataDashboard.totalOrders}
-                            formatter={formatter}
-                        />
+                        <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+                            <div style={{ ...iconBoxStyle, background: "#e6f4ff" }}>
+                                <ShoppingCartOutlined style={{ fontSize: 28, color: "#1677ff" }} />
+                            </div>
+                            <Statistic
+                                title="Tổng đơn hàng"
+                                value={dataDashboard.totalOrders}
+                                formatter={formatter}
+                            />
+                        </div>
                     </Card>
                 </Col>
 
+                {/* Sản phẩm */}
                 <Col xs={24} sm={12} md={6}>
                     <Card bordered={false}>
-                        <Statistic
-                            title="Tổng sản phẩm"
-                            value={dataDashboard.totalProducts}
-                            formatter={formatter}
-                        />
+                        <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+                            <div style={{ ...iconBoxStyle, background: "#fffbe6" }}>
+                                <AppstoreOutlined style={{ fontSize: 28, color: "#faad14" }} />
+                            </div>
+                            <Statistic
+                                title="Tổng sản phẩm"
+                                value={dataDashboard.totalProducts}
+                                formatter={formatter}
+                            />
+                        </div>
                     </Card>
                 </Col>
 
+                {/* Danh mục */}
                 <Col xs={24} sm={12} md={6}>
                     <Card bordered={false}>
-                        <Statistic
-                            title="Tổng danh mục"
-                            value={dataDashboard.totalCategories}
-                            formatter={formatter}
-                        />
+                        <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+                            <div style={{ ...iconBoxStyle, background: "#f9f0ff" }}>
+                                <TagsOutlined style={{ fontSize: 28, color: "#722ed1" }} />
+                            </div>
+                            <Statistic
+                                title="Tổng danh mục"
+                                value={dataDashboard.totalCategories}
+                                formatter={formatter}
+                            />
+                        </div>
                     </Card>
                 </Col>
             </Row>
 
-            {/* Bảng thống kê danh mục */}
+            {/* Bảng thống kê danh mục (đã thêm icon) */}
             <Row gutter={[20, 20]} style={{ marginTop: 40 }}>
                 <Col span={24}>
                     <Card title="Thống kê danh mục sản phẩm">

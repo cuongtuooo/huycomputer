@@ -21,8 +21,8 @@ type CategorySection = {
     products: IProductTable[];
 };
 
-const MAX_SECTIONS = 8;              // số danh mục hiển thị trên homepage
-const MAX_ITEMS_PER_SECTION = 10;    // 10 sản phẩm / danh mục (trang chủ)
+const MAX_SECTIONS = 8;
+const MAX_ITEMS_PER_SECTION = 10;
 
 const HomePage = () => {
     const [searchTerm] = useOutletContext() as any;
@@ -30,7 +30,6 @@ const HomePage = () => {
     const [listCategory, setListCategory] = useState<{ label: string; value: string }[]>([]);
     const [sections, setSections] = useState<CategorySection[]>([]);
 
-    // Chế độ LIST (xem tất cả) dùng các state cũ
     const [listProduct, setListProduct] = useState<IProductTable[]>([]);
     const [current, setCurrent] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
@@ -44,7 +43,6 @@ const HomePage = () => {
     const navigate = useNavigate();
     const [params, setParams] = useSearchParams();
 
-    // Khi có search / category → vào chế độ LIST
     const isListMode = useMemo(() => {
         if (searchTerm) return true;
         if (filter.includes('category=')) return true;
@@ -52,7 +50,6 @@ const HomePage = () => {
         return false;
     }, [searchTerm, filter, params]);
 
-    // Tab sort
     const items = [
         { key: 'sort=-sold', label: 'Phổ biến', children: <></> },
         { key: 'sort=-updatedAt', label: 'Hàng Mới', children: <></> },
@@ -60,7 +57,7 @@ const HomePage = () => {
         { key: 'sort=-price', label: 'Giá Cao Đến Thấp', children: <></> },
     ];
 
-    // Load danh mục
+    // ---------- LOAD DANH MỤC ----------
     useEffect(() => {
         const initCategory = async () => {
             const res = await getCategoryAPI();
@@ -72,7 +69,7 @@ const HomePage = () => {
         initCategory();
     }, []);
 
-    // Homepage mode: load 10 sản phẩm cho từng danh mục
+    // ---------- TRANG CHỦ: load sản phẩm theo từng danh mục ----------
     useEffect(() => {
         const loadSections = async () => {
             if (!listCategory.length || isListMode) return;
@@ -96,12 +93,12 @@ const HomePage = () => {
         loadSections();
     }, [listCategory, isListMode, sortQuery]);
 
-    // List mode: danh sách + phân trang 15/sp
+    // ---------- DANH SÁCH (khi chọn danh mục hoặc search) ----------
     useEffect(() => {
         if (!isListMode) return;
         fetchProduct();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [current, pageSize, filter, sortQuery, searchTerm, isListMode]);
+        // 👇 THÊM params vào dependency
+    }, [current, pageSize, filter, sortQuery, searchTerm, isListMode, params]);
 
     const fetchProduct = async () => {
         setIsLoading(true);
@@ -109,8 +106,11 @@ const HomePage = () => {
         if (filter) query += `&${filter}`;
         if (sortQuery) query += `&${sortQuery}`;
         if (searchTerm) query += `&name=/${searchTerm}/i`;
+
+        // 👇 lấy category từ URL
         const urlCate = params.get('category');
         if (urlCate && !filter.includes('category=')) query += `&category=${urlCate}`;
+
         const res = await getProductsAPI(query);
         if (res?.data) {
             setListProduct(res.data.result);
@@ -127,7 +127,6 @@ const HomePage = () => {
         }
     };
 
-    // Lọc (giữ logic cũ) – khi chọn category thì tự vào list mode & pageSize = 15
     const handleChangeFilter = (changedValues: any, values: any) => {
         if (changedValues.category) {
             const cate = values.category;
@@ -151,55 +150,33 @@ const HomePage = () => {
         }
     };
 
-    // Click “Xem tất cả” ở header danh mục
     const openAllOfCategory = (categoryId: string) => {
         setFilter(`category=${categoryId}`);
         setPageSize(15);
         setCurrent(1);
         setParams(new URLSearchParams({ category: categoryId }));
+        // 👇 Scroll lên đầu
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
         <>
-            {/* thanh chips danh mục trên cùng */}
-            <div className="category-topbar">
-                <div className="category-topbar__inner">
-                    <div className="category-chips">
-                        {listCategory.map((item) => (
-                            <button
-                                key={item.value}
-                                className="category-chip"
-                                onClick={() => openAllOfCategory(item.value)}
-                            >
-                                {item.label.toUpperCase()}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-
-            {/* content */}
             <div style={{ background: '#efefef', padding: '20px 0' }}>
-                <div className="homepage-container" style={{ maxWidth: 1440, margin: '0 auto', overflow: 'hidden' }}>
+                <div className="homepage-container" style={{ maxWidth: 1440, margin: '0 auto' }}>
                     <Row gutter={[20, 20]}>
                         <Col md={24} xs={24}>
                             <Spin spinning={isLoading} tip="Loading...">
                                 <div style={{ padding: 20, background: '#fff', borderRadius: 5 }}>
-                                    {/* Tabs sort chỉ xuất hiện khi ở chế độ LIST */}
                                     {isListMode && (
                                         <Row>
                                             <Tabs
                                                 defaultActiveKey="sort=-sold"
                                                 items={items}
                                                 onChange={(v) => setSortQuery(v)}
-                                                style={{ overflowX: 'auto' }}
                                             />
                                         </Row>
                                     )}
 
-                                    {/* ===== SECTIONS MODE (Trang chủ) ===== */}
                                     {!isListMode && (
                                         <div className="sections-wrap">
                                             {sections.map((sec) => (
@@ -225,59 +202,45 @@ const HomePage = () => {
                                                                             alt="thumbnail Product"
                                                                         />
                                                                     </div>
-                                                                    {/* Tên sản phẩm */}
                                                                     <div
                                                                         title={item.name}
                                                                         style={{
                                                                             marginTop: 8,
                                                                             fontSize: 15,
-                                                                            lineHeight: '20px',
                                                                             color: '#2f3640',
                                                                             fontWeight: 600,
                                                                             display: '-webkit-box',
-                                                                            WebkitLineClamp: 2,            // khóa 2 dòng
+                                                                            WebkitLineClamp: 2,
                                                                             WebkitBoxOrient: 'vertical',
                                                                             overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis',
-                                                                            minHeight: 40                   // giữ chiều cao đều nhau
                                                                         }}
                                                                     >
                                                                         {item.name}
                                                                     </div>
 
-                                                                    {/* Giá bán */}
                                                                     <div
                                                                         style={{
                                                                             marginTop: 6,
                                                                             fontSize: 18,
                                                                             fontWeight: 700,
-                                                                            letterSpacing: '.2px',
-                                                                            color: '#105aa2'               // primary khớp header
+                                                                            color: '#105aa2',
                                                                         }}
                                                                     >
                                                                         {new Intl.NumberFormat('vi-VN', {
                                                                             style: 'currency',
                                                                             currency: 'VND',
-                                                                            maximumFractionDigits: 0       // VND thường không có phần lẻ
+                                                                            maximumFractionDigits: 0,
                                                                         }).format(item?.price ?? 0)}
-                                                                    </div>
-                                                                    <div className="rating">
-                                                                        <Rate value={5} disabled style={{ color: '#ffce3d', fontSize: 10 }} />
-                                                                        {/* <span>Đã bán {item?.sold ?? 0}</span> */}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         ))}
-                                                        {sec.products.length === 0 && (
-                                                            <div style={{ padding: 12, color: '#888' }}>Chưa có sản phẩm.</div>
-                                                        )}
                                                     </Row>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
 
-                                    {/* ===== LIST MODE (Xem tất cả) ===== */}
                                     {isListMode && (
                                         <>
                                             <Row className="customize-row">
@@ -294,46 +257,34 @@ const HomePage = () => {
                                                                     alt="thumbnail Product"
                                                                 />
                                                             </div>
-                                                            {/* Tên sản phẩm */}
                                                             <div
                                                                 title={item.name}
                                                                 style={{
                                                                     marginTop: 8,
                                                                     fontSize: 15,
-                                                                    lineHeight: '20px',
                                                                     color: '#2f3640',
                                                                     fontWeight: 600,
                                                                     display: '-webkit-box',
-                                                                    WebkitLineClamp: 2,            // khóa 2 dòng
+                                                                    WebkitLineClamp: 2,
                                                                     WebkitBoxOrient: 'vertical',
                                                                     overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis',
-                                                                    minHeight: 40                   // giữ chiều cao đều nhau
                                                                 }}
                                                             >
                                                                 {item.name}
                                                             </div>
-
-                                                            {/* Giá bán */}
                                                             <div
                                                                 style={{
                                                                     marginTop: 6,
                                                                     fontSize: 18,
                                                                     fontWeight: 700,
-                                                                    letterSpacing: '.2px',
-                                                                    color: '#105aa2'               // primary khớp header
+                                                                    color: '#105aa2',
                                                                 }}
                                                             >
                                                                 {new Intl.NumberFormat('vi-VN', {
                                                                     style: 'currency',
                                                                     currency: 'VND',
-                                                                    maximumFractionDigits: 0       // VND thường không có phần lẻ
+                                                                    maximumFractionDigits: 0,
                                                                 }).format(item?.price ?? 0)}
-                                                            </div>
-
-                                                            <div className="rating">
-                                                                <Rate value={5} disabled style={{ color: '#ffce3d', fontSize: 10 }} />
-                                                                <span>Đã bán {item?.sold ?? 0}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -346,7 +297,6 @@ const HomePage = () => {
                                                     current={current}
                                                     total={total}
                                                     pageSize={pageSize}
-                                                    responsive
                                                     onChange={(p, s) => handleOnchangePage({ current: p, pageSize: s })}
                                                     showSizeChanger
                                                     pageSizeOptions={[15, 30, 45]}
@@ -361,7 +311,7 @@ const HomePage = () => {
                 </div>
             </div>
 
-            {/* Mobile Filter giữ nguyên */}
+            {/* Mobile Filter */}
             <MobileFilter
                 isOpen={showMobileFilter}
                 setIsOpen={setShowMobileFilter}

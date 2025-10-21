@@ -40,16 +40,9 @@ const LayoutAdmin = () => {
 
         },
         {
-            label: <span>Quản lý tài khoản</span>,
+            label: <Link to='/admin/user'>Quản lý tài khoản</Link>,
             key: '/admin/user',
             icon: <UserOutlined />,
-            children: [
-                {
-                    label: <Link to='/admin/user'>tài khoản</Link>,
-                    key: '/admin/user',
-                    icon: <TeamOutlined />,
-                },
-            ]
         },
         {
             label: <Link to='/admin/product'>Quản lý sản phẩm</Link>,
@@ -177,7 +170,7 @@ const LayoutAdmin = () => {
                         <Outlet />
                     </Content>
                     <Footer style={{ padding: 0, textAlign: "center" }}>
-                        React Test Fresher &copy; Hỏi Dân IT - Made with <HeartTwoTone />
+                        Admin Vũ Minh Huy
                     </Footer>
                 </Layout>
             </Layout>

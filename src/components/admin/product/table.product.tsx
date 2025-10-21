@@ -229,7 +229,7 @@ const TableProduct = () => {
                     }
                 }
 
-                headerTitle="Table Product"
+                headerTitle="Quản lý Sản phẩm"
                 toolBarRender={() => [
                     <CSVLink
                         data={currentDataTable}
@@ -239,7 +239,7 @@ const TableProduct = () => {
                             icon={<ExportOutlined />}
                             type="primary"
                         >
-                            Export
+                            Xuất
                         </Button>
                     </CSVLink >
                     ,
@@ -252,7 +252,7 @@ const TableProduct = () => {
                         }}
                         type="primary"
                     >
-                        Add new
+                        Thêm mới
                     </Button>
                 ]}
             />

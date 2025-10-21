@@ -197,7 +197,7 @@ const TableUser = () => {
                     }
                 }
 
-                headerTitle="Table user"
+                headerTitle="Quản lý Người dùng"
                 toolBarRender={() => [
                     <CSVLink
                         data={currentDataTable}
@@ -207,7 +207,7 @@ const TableUser = () => {
                             icon={<ExportOutlined />}
                             type="primary"
                         >
-                            Export
+                            Xuất
                         </Button>
                     </CSVLink>
                     ,
@@ -217,7 +217,7 @@ const TableUser = () => {
                         type="primary"
                         onClick={() => setOpenModalImport(true)}
                     >
-                        Import
+                        Nhập
                     </Button>,
 
                     <Button
@@ -228,7 +228,7 @@ const TableUser = () => {
                         }}
                         type="primary"
                     >
-                        Add new
+                        Thêm mới
                     </Button>
 
                 ]}

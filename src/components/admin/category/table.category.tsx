@@ -182,7 +182,7 @@ const TableCategory = () => {
                     }
                 }
 
-                headerTitle="Table Category"
+                headerTitle="Quản lý Danh mục"
                 toolBarRender={() => [
                     <CSVLink
                         data={currentDataTable}
@@ -192,7 +192,7 @@ const TableCategory = () => {
                             icon={<ExportOutlined />}
                             type="primary"
                         >
-                            Export
+                            Xuất
                         </Button>
                     </CSVLink >
                     ,
@@ -205,7 +205,7 @@ const TableCategory = () => {
                         }}
                         type="primary"
                     >
-                        Add new
+                        Thêm mới
                     </Button>
                 ]}
             />

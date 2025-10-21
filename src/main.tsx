@@ -21,12 +21,12 @@ import OrderPage from 'pages/client/order';
 import HistoryPage from 'pages/client/history';
 
 import enUS from 'antd/locale/en_US';
-import viVN from 'antd/locale/vi_VN';
 import ManageProductPage from './pages/admin/manage.product';
 import ProductPage from './pages/client/product';
 import ManageCategoryPage from './pages/admin/manage.category';
 import OrderTrackingPage from './pages/client/order-tracking';
-
+import viVN from 'antd/locale/vi_VN'; // 👈 ngôn ngữ tiếng Việt
+import 'dayjs/locale/vi'; // 👈 hiển thị ngày tháng tiếng Việt
 const router = createBrowserRouter([
   {
     path: "/",
@@ -140,7 +140,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App>
       <AppProvider>
-        <ConfigProvider locale={enUS}>
+        <ConfigProvider locale={viVN}>
           <RouterProvider router={router} />
         </ConfigProvider>
       </AppProvider>

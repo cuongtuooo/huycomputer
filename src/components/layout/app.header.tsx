@@ -199,6 +199,9 @@ const AppHeader = (props: IProps) => {
                         <li>
                             <Link to="/contact">Liên hệ</Link>
                         </li>
+                        <li>
+                            <Link to="/orders">Đơn hàng</Link>
+                        </li>
 
                         {/* Giỏ hàng */}
                         <li>

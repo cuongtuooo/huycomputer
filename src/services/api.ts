@@ -228,3 +228,16 @@ export const getDashboardAPI = () => {
     }>>(urlBackend)
 }
 
+// Khách yêu cầu hoàn hàng
+export const requestReturnAPI = (id: string) => {
+    const urlBackend = `/api/v1/order/${id}/request-return`;
+    return axios.patch<IBackendRes<any>>(urlBackend);
+};
+
+// Admin xác nhận đã nhận hàng hoàn
+export const adminReturnReceivedAPI = (id: string) => {
+    const urlBackend = `/api/v1/order/${id}/admin-return-received`;
+    return axios.patch<IBackendRes<any>>(urlBackend);
+};
+
+

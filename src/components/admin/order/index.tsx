@@ -1,69 +1,92 @@
-import { getOrdersAPI, adminUpdateOrderStatusAPI, adminReturnReceivedAPI } from '@/services/api';
+import {
+    getOrdersAPI,
+    adminUpdateOrderStatusAPI,
+    adminApproveReturnAPI,
+    adminRejectReturnAPI,
+    adminReturnReceivedAPI,
+} from '@/services/api';
 import { dateRangeValidate } from '@/services/helper';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { App, Button, Drawer, Space, Tag, Typography, Divider } from 'antd';
+import {
+    App,
+    Button,
+    Drawer,
+    Space,
+    Tag,
+    Typography,
+    Divider,
+    Tabs,
+} from 'antd';
 import { useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import { DownloadOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    Package,
+    Truck,
+    CheckCircle2,
+    Clock,
+    Ban,
+    RotateCcw,
+    RefreshCcw,
+    ClipboardList,
+} from 'lucide-react';
 
 const { Text } = Typography;
 
-// -------------------- Các trạng thái mở rộng --------------------
 type OrderStatus =
     | 'PENDING'
     | 'SHIPPING'
     | 'DELIVERED'
     | 'RECEIVED'
-    | 'CANCELED'
+    | 'RETURN_REQUESTED'
     | 'RETURNED'
-    | 'RETURN_RECEIVED';
+    | 'RETURN_RECEIVED'
+    | 'RETURN_REJECTED'
+    | 'CANCELED';
 
 const statusColor: Record<OrderStatus, string> = {
     PENDING: 'orange',
     SHIPPING: 'blue',
     DELIVERED: 'geekblue',
     RECEIVED: 'green',
-    CANCELED: 'red',
+    RETURN_REQUESTED: 'gold',
     RETURNED: 'magenta',
     RETURN_RECEIVED: 'purple',
+    RETURN_REJECTED: 'volcano',
+    CANCELED: 'red',
 };
 
 const statusLabel: Record<OrderStatus, string> = {
-    PENDING: 'Chờ duyệt',
+    PENDING: 'Chờ xác nhận',
     SHIPPING: 'Đang giao hàng',
-    DELIVERED: 'Đã giao tới',
+    DELIVERED: 'Đã giao',
     RECEIVED: 'Đã nhận hàng',
+    RETURN_REQUESTED: 'Yêu cầu hoàn hàng',
+    RETURNED: 'Đang hoàn hàng',
+    RETURN_RECEIVED: 'Đã nhận hoàn',
+    RETURN_REJECTED: 'Từ chối hoàn hàng',
     CANCELED: 'Đã hủy',
-    RETURNED: 'Hoàn hàng',
-    RETURN_RECEIVED: 'Đã nhận hàng hoàn',
 };
 
-type TSearch = {
-    name?: string;
-    status?: OrderStatus;
-    createdAtRange?: string[];
-};
-
-// -------------------- Bảng quản lý đơn hàng --------------------
 const TableOrder = () => {
     const actionRef = useRef<ActionType>();
     const lastParamsRef = useRef<any>({});
     const lastSortRef = useRef<any>({});
-
     const { message, modal } = App.useApp();
-    const [exporting, setExporting] = useState(false);
 
+    const [exporting, setExporting] = useState(false);
+    const [activeTab, setActiveTab] = useState<string>('ALL');
+    const [openDetail, setOpenDetail] = useState(false);
+    const [current, setCurrent] = useState<IOrderTable | null>(null);
     const [meta, setMeta] = useState({
         current: 1,
         pageSize: 10,
         pages: 0,
         total: 0,
     });
-
-    const [openDetail, setOpenDetail] = useState(false);
-    const [current, setCurrent] = useState<IOrderTable | null>(null);
 
     // -------------------- Build query --------------------
     const buildQuery = (
@@ -75,13 +98,10 @@ const TableOrder = () => {
         const current = override?.current ?? params?.current ?? 1;
         const pageSize = override?.pageSize ?? params?.pageSize ?? 10;
         query += `current=${current}&pageSize=${pageSize}`;
-
+        if (activeTab !== 'ALL') query += `&status=${activeTab}`;
         if (params?.name) query += `&name=/${params.name}/i`;
-        if (params?.status) query += `&status=${params.status}`;
-
         const range = dateRangeValidate(params?.createdAtRange as any);
         if (range) query += `&createdAt>=${range[0]}&createdAt<=${range[1]}`;
-
         if (sort && sort.createdAt) {
             query += `&sort=${sort.createdAt === 'ascend' ? 'createdAt' : '-createdAt'}`;
         } else if (sort && sort.totalPrice) {
@@ -92,7 +112,7 @@ const TableOrder = () => {
         return query;
     };
 
-    // -------------------- Cập nhật trạng thái admin --------------------
+    // -------------------- Admin Update --------------------
     const handleAdminUpdate = async (
         record: IOrderTable,
         next: 'SHIPPING' | 'DELIVERED' | 'RETURN_RECEIVED'
@@ -100,14 +120,14 @@ const TableOrder = () => {
         let title = '';
         let content = '';
         if (next === 'SHIPPING') {
-            title = 'Xác nhận chuyển sang ĐANG GIAO?';
-            content = 'Sau khi chuyển ĐANG GIAO, khách sẽ không thể hủy đơn.';
+            title = 'Chuyển sang ĐANG GIAO?';
+            content = 'Khách sẽ không thể hủy đơn sau bước này.';
         } else if (next === 'DELIVERED') {
-            title = 'Xác nhận chuyển sang ĐÃ GIAO?';
-            content = 'Sau khi chuyển ĐÃ GIAO, khách có thể bấm "Đã nhận hàng" hoặc "Hoàn hàng".';
+            title = 'Chuyển sang ĐÃ GIAO?';
+            content = 'Khách có thể bấm "Đã nhận hàng" hoặc "Hoàn hàng".';
         } else if (next === 'RETURN_RECEIVED') {
             title = 'Xác nhận đã nhận hàng hoàn?';
-            content = 'Hệ thống sẽ cập nhật trạng thái đơn thành "Đã nhận hàng hoàn".';
+            content = 'Trạng thái sẽ chuyển sang "Đã nhận hoàn".';
         }
 
         modal.confirm({
@@ -129,6 +149,22 @@ const TableOrder = () => {
         });
     };
 
+    const handleApproveReturn = async (record: IOrderTable) => {
+        const res = await adminApproveReturnAPI(record._id);
+        if (res?.data) {
+            message.success('Đã chấp nhận hoàn hàng');
+            actionRef.current?.reload();
+        }
+    };
+
+    const handleRejectReturn = async (record: IOrderTable) => {
+        const res = await adminRejectReturnAPI(record._id);
+        if (res?.data) {
+            message.success('Đã từ chối hoàn hàng');
+            actionRef.current?.reload();
+        }
+    };
+
     // -------------------- Export Excel --------------------
     const handleExportExcel = async () => {
         try {
@@ -142,16 +178,12 @@ const TableOrder = () => {
 
             const data = rows.map((r) => ({
                 'Mã đơn': r._id,
-                'Họ tên': r.name,
-                'Địa chỉ': r.address,
+                'Khách hàng': r.name,
                 'SĐT': r.phone,
-                'Hình thức': r.type,
-                'Trạng thái': statusLabel[(r.status as OrderStatus) ?? 'PENDING'] ?? r.status,
-                'Tổng tiền (VND)': r.totalPrice ?? 0,
+                'Địa chỉ': r.address,
+                'Trạng thái': statusLabel[r.status as OrderStatus],
+                'Tổng tiền': r.totalPrice,
                 'Ngày tạo': dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss'),
-                'Sản phẩm': (r.detail || [])
-                    .map((d: any) => `${d.productName} x ${d.quantity}`)
-                    .join(' | '),
             }));
 
             const wb = XLSX.utils.book_new();
@@ -163,59 +195,25 @@ const TableOrder = () => {
         }
     };
 
-    // -------------------- Cấu hình cột --------------------
+    // -------------------- Columns --------------------
     const columns: ProColumns<IOrderTable>[] = [
         { dataIndex: 'index', valueType: 'indexBorder', width: 52 },
-        {
-            title: 'Mã đơn',
-            dataIndex: '_id',
-            hideInSearch: true,
-            render: (_, entity) => <Text copyable>{entity._id}</Text>,
-        },
-        { title: 'Họ tên', dataIndex: 'name' },
-        { title: 'Địa chỉ', dataIndex: 'address', hideInSearch: true, ellipsis: true },
+        { title: 'Mã đơn', dataIndex: '_id', render: (_, e) => <Text copyable>{e._id}</Text> },
+        { title: 'Khách hàng', dataIndex: 'name' },
         { title: 'SĐT', dataIndex: 'phone', hideInSearch: true },
-        { title: 'Hình thức', dataIndex: 'type', hideInSearch: true },
         {
             title: 'Trạng thái',
             dataIndex: 'status',
-            valueType: 'select',
-            fieldProps: { allowClear: true },
-            valueEnum: {
-                PENDING: { text: 'Chờ duyệt' },
-                SHIPPING: { text: 'Đang giao hàng' },
-                DELIVERED: { text: 'Đã giao tới' },
-                RECEIVED: { text: 'Đã nhận hàng' },
-                CANCELED: { text: 'Đã hủy' },
-                RETURNED: { text: 'Hoàn hàng' },
-                RETURN_RECEIVED: { text: 'Đã nhận hàng hoàn' },
-            },
             render: (_, r) => (
-                <Tag color={statusColor[r.status as OrderStatus]} style={{ fontWeight: 600 }}>
-                    {statusLabel[r.status as OrderStatus]}
-                </Tag>
+                <Tag color={statusColor[r.status as OrderStatus]}>{statusLabel[r.status as OrderStatus]}</Tag>
             ),
         },
         {
             title: 'Tổng tiền',
             dataIndex: 'totalPrice',
-            hideInSearch: true,
             sorter: true,
-            render: (_, entity) =>
-                new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND',
-                }).format(entity.totalPrice || 0),
-        },
-        { title: 'Ngày tạo', dataIndex: 'createdAt', valueType: 'date', sorter: true, hideInSearch: true },
-        {
-            title: 'Khoảng ngày',
-            dataIndex: 'createdAtRange',
-            valueType: 'dateRange',
-            hideInTable: true,
-            search: {
-                transform: (value) => ({ createdAtRange: value }),
-            },
+            render: (_, e) =>
+                new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(e.totalPrice || 0),
         },
         {
             title: 'Thao tác',
@@ -226,16 +224,30 @@ const TableOrder = () => {
                 const canShip = s === 'PENDING';
                 const canDelivered = s === 'SHIPPING';
                 const canReturnReceived = s === 'RETURNED';
+                const canApproveReject = s === 'RETURN_REQUESTED';
                 return (
                     <Space>
-                        <Button size="small" onClick={() => (setOpenDetail(true), setCurrent(record))}>
-                            Xem
-                        </Button>
                         <Button
                             size="small"
-                            disabled={!canShip}
-                            onClick={() => handleAdminUpdate(record, 'SHIPPING')}
+                            type="default"
+                            onClick={() => {
+                                setOpenDetail(true);
+                                setCurrent(record);
+                            }}
                         >
+                            Xem
+                        </Button>
+                        {canApproveReject && (
+                            <>
+                                <Button size="small" type="primary" onClick={() => handleApproveReturn(record)}>
+                                    Chấp nhận
+                                </Button>
+                                <Button size="small" danger onClick={() => handleRejectReturn(record)}>
+                                    Từ chối
+                                </Button>
+                            </>
+                        )}
+                        <Button size="small" disabled={!canShip} onClick={() => handleAdminUpdate(record, 'SHIPPING')}>
                             Giao hàng
                         </Button>
                         <Button
@@ -252,7 +264,7 @@ const TableOrder = () => {
                             disabled={!canReturnReceived}
                             onClick={() => handleAdminUpdate(record, 'RETURN_RECEIVED')}
                         >
-                            Đã nhận hàng hoàn
+                            Đã nhận hoàn
                         </Button>
                     </Space>
                 );
@@ -260,56 +272,92 @@ const TableOrder = () => {
         },
     ];
 
-    // -------------------- Render chính --------------------
+    // -------------------- Tabs với icon + animation --------------------
+    const tabs = [
+        { key: 'ALL', label: 'Tất cả', icon: <ClipboardList size={16} /> },
+        { key: 'PENDING', label: 'Chờ xác nhận', icon: <Clock size={16} /> },
+        { key: 'SHIPPING', label: 'Đang giao hàng', icon: <Truck size={16} /> },
+        { key: 'DELIVERED', label: 'Đã giao', icon: <Package size={16} /> },
+        { key: 'RECEIVED', label: 'Đã nhận hàng', icon: <CheckCircle2 size={16} /> },
+        // { key: 'RETURN_REQUESTED', label: 'Yêu cầu hoàn', icon: <RotateCcw size={16} /> },
+        { key: 'RETURNED', label: 'Đang hoàn hàng', icon: <RefreshCcw size={16} /> },
+        { key: 'RETURN_RECEIVED', label: 'Đã nhận hoàn', icon: <CheckCircle2 size={16} /> },
+        { key: 'CANCELED', label: 'Đã hủy', icon: <Ban size={16} /> },
+    ];
+
     return (
         <>
-            <ProTable<IOrderTable, TSearch>
-                columns={columns}
-                actionRef={actionRef}
-                cardBordered
-                rowKey="_id"
-                headerTitle="Quản lý đơn hàng"
-                toolBarRender={() => [
-                    <Button
-                        key="export"
-                        icon={<DownloadOutlined />}
-                        loading={exporting}
-                        onClick={handleExportExcel}
-                    >
-                        Xuất Excel
-                    </Button>,
-                ]}
-                request={async (params, sort) => {
-                    lastParamsRef.current = params;
-                    lastSortRef.current = sort;
-
-                    const query = buildQuery(params, sort);
-                    const res = await getOrdersAPI(query);
-                    const m = res?.data?.meta;
-                    const rows = res?.data?.result || [];
-
-                    if (m) setMeta(m);
-
-                    return {
-                        data: rows,
-                        success: true,
-                        total: m?.total || 0,
-                    };
+            <Tabs
+                activeKey={activeTab}
+                onChange={(key) => {
+                    setActiveTab(key);
+                    actionRef.current?.reload();
                 }}
-                pagination={{
-                    current: meta.current,
-                    pageSize: meta.pageSize,
-                    showSizeChanger: true,
-                    total: meta.total,
-                    showTotal: (total, range) => (
-                        <div>
-                            {range[0]}–{range[1]} trên {total} rows
-                        </div>
+                items={tabs.map((t) => ({
+                    key: t.key,
+                    label: (
+                        <Space>
+                            {t.icon}
+                            {t.label}
+                        </Space>
                     ),
+                }))}
+                style={{
+                    marginBottom: 16,
                 }}
             />
 
-            {/* Drawer chi tiết đơn */}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                >
+                    <ProTable<IOrderTable>
+                        columns={columns}
+                        actionRef={actionRef}
+                        rowKey="_id"
+                        cardBordered
+                        headerTitle="Quản lý đơn hàng"
+                        params={{ activeTab }}
+                        toolBarRender={() => [
+                            <Button
+                                key="export"
+                                icon={<DownloadOutlined />}
+                                loading={exporting}
+                                onClick={handleExportExcel}
+                            >
+                                Xuất Excel
+                            </Button>,
+                        ]}
+                        request={async (params, sort) => {
+                            lastParamsRef.current = params;
+                            lastSortRef.current = sort;
+                            const query = buildQuery(params, sort);
+                            const res = await getOrdersAPI(query);
+                            const m = res?.data?.meta;
+                            const rows = res?.data?.result || [];
+                            if (m) setMeta(m);
+                            return { data: rows, success: true, total: m?.total || 0 };
+                        }}
+                        pagination={{
+                            current: meta.current,
+                            pageSize: meta.pageSize,
+                            showSizeChanger: true,
+                            total: meta.total,
+                            showTotal: (total, range) => (
+                                <div>
+                                    {range[0]}–{range[1]} trên {total} đơn
+                                </div>
+                            ),
+                        }}
+                    />
+                </motion.div>
+            </AnimatePresence>
+
+            {/* Drawer chi tiết */}
             <Drawer
                 title={`Chi tiết đơn ${current?._id ? '#' + current?._id.slice(-6).toUpperCase() : ''}`}
                 open={openDetail}
@@ -332,31 +380,14 @@ const TableOrder = () => {
                                 <Text type="secondary">Địa chỉ:</Text> <Text>{current.address}</Text>
                             </div>
                             <div>
-                                <Text type="secondary">Hình thức:</Text> <Tag>{current.type}</Tag>
-                            </div>
-                            <div>
                                 <Text type="secondary">Trạng thái:</Text>{' '}
-                                <Tag color={statusColor[current.status as OrderStatus]} style={{ fontWeight: 600 }}>
+                                <Tag color={statusColor[current.status as OrderStatus]}>
                                     {statusLabel[current.status as OrderStatus]}
                                 </Tag>
                             </div>
-                            <div>
-                                <Text type="secondary">Ngày tạo:</Text>{' '}
-                                <Text>{new Date(current.createdAt).toLocaleString('vi-VN')}</Text>
-                            </div>
-                            <div>
-                                <Text type="secondary">Tổng tiền:</Text>{' '}
-                                <Text strong>
-                                    {new Intl.NumberFormat('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND',
-                                    }).format(current.totalPrice || 0)}
-                                </Text>
-                            </div>
                         </Space>
-
                         <Divider />
-                        <div style={{ marginBottom: 8, fontWeight: 600 }}>Sản phẩm</div>
+                        <div style={{ fontWeight: 600 }}>Sản phẩm</div>
                         {current.detail?.map((it, idx) => (
                             <div
                                 key={idx}

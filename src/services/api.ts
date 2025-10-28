@@ -241,3 +241,12 @@ export const adminReturnReceivedAPI = (id: string) => {
 };
 
 
+export const adminApproveReturnAPI = (id: string) => {
+    const urlBackend = `/api/v1/order/${id}/admin-approve-return`;
+    return axios.patch<IBackendRes<any>>(urlBackend);
+};
+
+export const adminRejectReturnAPI = (id: string) => {
+    const urlBackend = `/api/v1/order/${id}/admin-reject-return`;
+    return axios.patch<IBackendRes<any>>(urlBackend);
+};

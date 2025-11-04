@@ -127,26 +127,61 @@ export const uploadFileAPI = (fileImg: any, folder: string) => {
 
 
 export const createProductAPI = (
-    name: string, mainText: string, desc:string, 
-    price: number, quantity: number, category: string,
-    thumbnail: string, slider: string[]
+    name: string,
+    mainText: string,
+    desc: string,
+    price: number,
+    quantity: number,
+    category: string,
+    thumbnail: string,
+    slider: string[],
+    variants?: any[]
 ) => {
-    const urlBackend = "/api/v1/Product";
-    return axios.post<IBackendRes<IRegister>>(urlBackend,
-        { name, mainText, desc,  price, quantity, category, thumbnail, slider, sold: 0 })
-}
+    const urlBackend = "/api/v1/product";
+    return axios.post<IBackendRes<IRegister>>(urlBackend, {
+        name,
+        mainText,
+        desc,
+        category,
+        thumbnail,
+        slider,
+        variants
+    });
+};
+
 
 
 export const updateProductAPI = (
-    _id: string, name: string,
-    mainText: string, desc: string,
-    price: number, quantity: number, category: string,
-    thumbnail: string, slider: string[]
+    _id: string,
+    name: string,
+    mainText: string,
+    desc: string,
+    price: number,            // tổng giá, tạm không dùng nếu có variants
+    quantity: number,         // tổng số lượng, tạm không dùng nếu có variants
+    category: string,
+    thumbnail: string,
+    slider: string[],
+    variants?: {
+        versionName: string;
+        color: string;
+        price: number;
+        quantity: number;
+    }[]
 ) => {
     const urlBackend = `/api/v1/Product/${_id}`;
-    return axios.patch<IBackendRes<IRegister>>(urlBackend,
-        { name, mainText, desc, price, quantity, category, thumbnail, slider })
-}
+    return axios.patch<IBackendRes<IRegister>>(urlBackend, {
+        name,
+        mainText,
+        desc,
+        price,
+        quantity,
+        category,
+        thumbnail,
+        slider,
+        variants: variants ?? [],
+    });
+};
+
 
 
 export const deleteProductAPI = (_id: string) => {

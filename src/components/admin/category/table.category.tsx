@@ -1,130 +1,117 @@
-
 import { useRef, useState } from 'react';
-import { Popconfirm, Button, App } from 'antd';
-import { DeleteTwoTone, EditTwoTone, ExportOutlined, PlusOutlined } from '@ant-design/icons';
+import { Popconfirm, Button, App, Tag } from 'antd';
+import { DeleteTwoTone, EditTwoTone, ExportOutlined, PlusOutlined, FolderOpenTwoTone } from '@ant-design/icons';
 import { CSVLink } from 'react-csv';
 import { ProTable } from '@ant-design/pro-components';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { dateRangeValidate } from '@/services/helper';
-import { deleteCategoryAPI, getCategoriesAPI, getCategoryAPI } from '@/services/api';
+import { deleteCategoryAPI, getCategoriesAPI } from '@/services/api';
 import CreateCategory from './create.category';
 import UpdateCategory from './update.category';
 
-
-
 type TSearch = {
-    name:string;
-    createdAt: string;
+    name: string;
     createdAtRange: string;
-    updatedAt: string;
-    updatedAtRange: string;
-}
-const TableCategory = () => {
+};
 
+const TableCategory = () => {
     const actionRef = useRef<ActionType>();
     const [meta, setMeta] = useState({
         current: 1,
         pageSize: 5,
         pages: 0,
-        total: 0
+        total: 0,
     });
 
-    const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
-    const [dataViewDetail, setDataViewDetail] = useState<ICategory | null>(null);
-
     const [openModalCreate, setOpenModalCreate] = useState<boolean>(false);
-
-    const [currentDataTable, setCurrentDataTable] = useState<ICategory[]>([]);
-
     const [openModalUpdate, setOpenModalUpdate] = useState<boolean>(false);
     const [dataUpdate, setDataUpdate] = useState<ICategory | null>(null);
-
+    const [currentDataTable, setCurrentDataTable] = useState<ICategory[]>([]);
     const [isDeleteCategory, setIsDeleteCategory] = useState<boolean>(false);
     const { message, notification } = App.useApp();
 
-
     const handleDeleteCategory = async (_id: string) => {
-        setIsDeleteCategory(true)
+        setIsDeleteCategory(true);
         const res = await deleteCategoryAPI(_id);
         if (res && res.data) {
-            message.success('Xóa Category thành công');
+            message.success('Xóa danh mục thành công');
             refreshTable();
         } else {
             notification.error({
                 message: 'Đã có lỗi xảy ra',
-                description: res.message
-            })
+                description: res.message,
+            });
         }
-        setIsDeleteCategory(false)
-    }
+        setIsDeleteCategory(false);
+    };
 
     const refreshTable = () => {
         actionRef.current?.reload();
-    }
+    };
 
     const columns: ProColumns<ICategory>[] = [
         {
-            title: 'Id',
-            dataIndex: '_id',
-            hideInSearch: true,
-            render(dom, entity, index, action, schema) {
-                return (
-                    <a href='#' onClick={() => {
-                        setDataViewDetail(entity);
-                        setOpenViewDetail(true);
-                    }}>{entity._id}</a>
-                )
-            },
-
+            title: 'Tên danh mục',
+            dataIndex: 'name',
+            sorter: true,
+            render: (_, record) => (
+                <>
+                    <FolderOpenTwoTone twoToneColor="#1677ff" />{' '}
+                    <strong>{record.name}</strong>
+                </>
+            ),
         },
         {
-            title: 'Tên Danh mục',
-            dataIndex: 'name',
-            sorter: true
+            title: 'Danh mục cha',
+            dataIndex: ['parentCategory', 'name'],
+            render: (_, record) =>
+                record.parentCategory ? (
+                    <Tag color="blue">{record.parentCategory.name}</Tag>
+                ) : (
+                    <Tag color="green">Gốc</Tag>
+                ),
         },
-
+        {
+            title: 'Ngày tạo',
+            dataIndex: 'createdAt',
+            valueType: 'dateTime',
+            sorter: true,
+            hideInSearch: true,
+        },
         {
             title: 'Ngày cập nhật',
             dataIndex: 'updatedAt',
+            valueType: 'dateTime',
             sorter: true,
-            valueType: 'date',
-            hideInSearch: true
-        },
-
-        {
-            title: 'Action',
             hideInSearch: true,
-            render(dom, entity, index, action, schema) {
-                return (
-                    <>
-                        <EditTwoTone
-                            twoToneColor="#f57800" style={{ cursor: "pointer", margin: "0 10px" }}
-                            onClick={() => {
-                                setOpenModalUpdate(true);
-                                setDataUpdate(entity);
-                            }}
-                        />
-
-                        <Popconfirm
-                            placement="leftTop"
-                            title={"Xác nhận xóa Category"}
-                            description={"Bạn có chắc chắn muốn xóa Category này ?"}
-                            onConfirm={() => handleDeleteCategory(entity._id)}
-                            okText="Xác nhận"
-                            cancelText="Hủy"
-                            okButtonProps={{ loading: isDeleteCategory }}
-                        >
-                            <span style={{ cursor: "pointer" }}>
-                                <DeleteTwoTone twoToneColor="#ff4d4f" />
-                            </span>
-                        </Popconfirm>
-
-
-                    </>
-
-                )
-            }
-        }
+        },
+        {
+            title: 'Hành động',
+            hideInSearch: true,
+            render: (_, record) => (
+                <>
+                    <EditTwoTone
+                        twoToneColor="#f57800"
+                        style={{ cursor: 'pointer', marginRight: 12 }}
+                        onClick={() => {
+                            setOpenModalUpdate(true);
+                            setDataUpdate(record);
+                        }}
+                    />
+                    <Popconfirm
+                        placement="leftTop"
+                        title="Xác nhận xóa danh mục"
+                        description="Bạn có chắc chắn muốn xóa danh mục này?"
+                        onConfirm={() => handleDeleteCategory(record._id)}
+                        okText="Xác nhận"
+                        cancelText="Hủy"
+                        okButtonProps={{ loading: isDeleteCategory }}
+                    >
+                        <DeleteTwoTone twoToneColor="#ff4d4f" style={{ cursor: 'pointer' }} />
+                    </Popconfirm>
+                </>
+            ),
+        },
     ];
 
     return (
@@ -133,96 +120,62 @@ const TableCategory = () => {
                 columns={columns}
                 actionRef={actionRef}
                 cardBordered
-                request={async (params, sort, filter) => {
-                    let query = "";
-                    if (params) {
-                        query += `current=${params.current}&pageSize=${params.pageSize}`
-                        if (params.name) {
-                            query += `&name=/${params.name}/i`
-                        }
-
-                        const createDateRange = dateRangeValidate(params.createdAtRange);
-                        if (createDateRange) {
-                            query += `&createdAt>=${createDateRange[0]}&createdAt<=${createDateRange[1]}`
-                        }
-
-                    }
-
-
-                    if (sort && sort.createdAt) {
-                        query += `&sort=${sort.createdAt === "ascend" ? "createdAt" : "-createdAt"}`
-                    } else query += `&sort=-createdAt`;
-
-                    if (sort && sort.name) {
-                        query += `&sort=${sort.name === "ascend" ? "name" : "-name"}`
-                    }
-
+                request={async (params, sort) => {
+                    let query = `current=${params.current}&pageSize=${params.pageSize}`;
+                    if (params.name) query += `&name=/${params.name}/i`;
+                    const range = dateRangeValidate(params.createdAtRange);
+                    if (range) query += `&createdAt>=${range[0]}&createdAt<=${range[1]}`;
+                    if (sort && sort.createdAt)
+                        query += `&sort=${sort.createdAt === 'ascend' ? 'createdAt' : '-createdAt'}`;
+                    else query += '&sort=-createdAt';
 
                     const res = await getCategoriesAPI(query);
                     if (res.data) {
                         setMeta(res.data.meta);
-                        setCurrentDataTable(res.data?.result ?? [])
+                        setCurrentDataTable(res.data.result ?? []);
                     }
                     return {
                         data: res.data?.result,
                         page: 1,
                         success: true,
-                        total: res.data?.meta.total
-                    }
-
+                        total: res.data?.meta.total,
+                    };
                 }}
                 rowKey="_id"
-                pagination={
-                    {
-                        current: meta.current,
-                        pageSize: meta.pageSize,
-                        showSizeChanger: true,
-                        total: meta.total,
-                        showTotal: (total, range) => { return (<div> {range[0]}-{range[1]} trên {total} rows</div>) }
-                    }
-                }
-
+                pagination={{
+                    current: meta.current,
+                    pageSize: meta.pageSize,
+                    showSizeChanger: true,
+                    total: meta.total,
+                    showTotal: (total, range) => (
+                        <div>
+                            {range[0]}–{range[1]} trên {total} rows
+                        </div>
+                    ),
+                }}
                 headerTitle="Quản lý Danh mục"
                 toolBarRender={() => [
-                    <CSVLink
-                        data={currentDataTable}
-                        filename='export-Category.csv'
-                    >
-                        <Button
-                            icon={<ExportOutlined />}
-                            type="primary"
-                        >
-                            Xuất
+                    <CSVLink key="export" data={currentDataTable} filename="export-category.csv">
+                        <Button icon={<ExportOutlined />} type="primary">
+                            Xuất CSV
                         </Button>
-                    </CSVLink >
-                    ,
-
+                    </CSVLink>,
                     <Button
-                        key="button"
+                        key="add"
                         icon={<PlusOutlined />}
-                        onClick={() => {
-                            setOpenModalCreate(true);
-                        }}
                         type="primary"
+                        onClick={() => setOpenModalCreate(true)}
                     >
                         Thêm mới
-                    </Button>
+                    </Button>,
                 ]}
             />
-{/* 
-            < DetailCategory
-                openViewDetail={openViewDetail}
-                setOpenViewDetail={setOpenViewDetail}
-                dataViewDetail={dataViewDetail}
-                setDataViewDetail={setDataViewDetail}
-            /> */}
 
             <CreateCategory
                 openModalCreate={openModalCreate}
                 setOpenModalCreate={setOpenModalCreate}
                 refreshTable={refreshTable}
             />
-
             <UpdateCategory
                 openModalUpdate={openModalUpdate}
                 setOpenModalUpdate={setOpenModalUpdate}
@@ -231,8 +184,7 @@ const TableCategory = () => {
                 setDataUpdate={setDataUpdate}
             />
         </>
-    )
-}
-
+    );
+};
 
 export default TableCategory;

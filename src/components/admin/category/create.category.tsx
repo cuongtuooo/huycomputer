@@ -1,14 +1,7 @@
-import { useState } from 'react';
-import {
-    App,
-    Col, Divider, Form, Input,
-    Modal, Row, 
-} from 'antd';
-import { LoadingOutlined, PlusOutlined } from '@ant-design/icons';
+import { useEffect, useState } from 'react';
+import { App, Col, Divider, Form, Input, Modal, Row, Select } from 'antd';
 import type { FormProps } from 'antd';
-import { createCategoryAPI } from '@/services/api';
-
-
+import { createCategoryAPI, getCategoryAPI } from '@/services/api';
 
 interface IProps {
     openModalCreate: boolean;
@@ -18,86 +11,89 @@ interface IProps {
 
 type FieldType = {
     name: string;
+    parentCategory?: string;
 };
 
 const CreateCategory = (props: IProps) => {
     const { openModalCreate, setOpenModalCreate, refreshTable } = props;
     const { message, notification } = App.useApp();
     const [form] = Form.useForm();
-
     const [isSubmit, setIsSubmit] = useState(false);
-    const [previewOpen, setPreviewOpen] = useState<boolean>(false);
+    const [categories, setCategories] = useState<ICategory[]>([]);
 
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const res = await getCategoryAPI();
+            if (res && res.data) setCategories(res.data.result ?? []);
+        };
+        fetchCategories();
+    }, []);
 
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
-        setIsSubmit(true)
-
-        const { name } = values;
-
-
-        const res = await createCategoryAPI(
-            name,
-        );
+        setIsSubmit(true);
+        const res = await createCategoryAPI(values.name, values.parentCategory || null);
         if (res && res.data) {
-            message.success('Tạo mới Product thành công');
+            message.success('Tạo danh mục thành công');
             form.resetFields();
             setOpenModalCreate(false);
             refreshTable();
         } else {
             notification.error({
                 message: 'Đã có lỗi xảy ra',
-                description: res.message
-            })
+                description: res.message,
+            });
         }
-
-        setIsSubmit(false)
+        setIsSubmit(false);
     };
 
-
     return (
-        <>
+        <Modal
+            title="Thêm mới Danh mục"
+            open={openModalCreate}
+            onOk={() => form.submit()}
+            onCancel={() => {
+                form.resetFields();
+                setOpenModalCreate(false);
+            }}
+            destroyOnClose
+            okButtonProps={{ loading: isSubmit }}
+            okText="Tạo mới"
+            cancelText="Hủy"
+            width="50vw"
+            maskClosable={false}
+        >
+            <Divider />
+            <Form form={form} name="form-create-category" onFinish={onFinish} autoComplete="off">
+                <Row gutter={15}>
+                    <Col span={12}>
+                        <Form.Item<FieldType>
+                            labelCol={{ span: 24 }}
+                            label="Tên danh mục"
+                            name="name"
+                            rules={[{ required: true, message: 'Vui lòng nhập tên danh mục!' }]}
+                        >
+                            <Input />
+                        </Form.Item>
+                    </Col>
 
-            <Modal
-                title="Thêm mới Category"
-                open={openModalCreate}
-                onOk={() => { form.submit() }}
-                onCancel={() => {
-                    form.resetFields();
-                    setOpenModalCreate(false);
-                }}
-                destroyOnClose={true}
-                okButtonProps={{ loading: isSubmit }}
-                okText={"Tạo mới"}
-                cancelText={"Hủy"}
-                confirmLoading={isSubmit}
-                width={"50vw"}
-                maskClosable={false}
-            >
-                <Divider />
-
-                <Form
-                    form={form}
-                    name="form-create-Product"
-                    onFinish={onFinish}
-                    autoComplete="off"
-                >
-                    <Row gutter={15}>
-                        <Col span={12}>
-                            <Form.Item<FieldType>
-                                labelCol={{ span: 24 }}
-                                label="Tên sản danh mục"
-                                name="name"
-                                rules={[{ required: true, message: 'Vui lòng nhập tên hiển thị!' }]}
-                            >
-                                <Input />
-                            </Form.Item>
-                        </Col>
-
-                    </Row>
-                </Form>
-
-            </Modal>
-        </>
+                    <Col span={12}>
+                        <Form.Item<FieldType>
+                            labelCol={{ span: 24 }}
+                            label="Danh mục cha (tuỳ chọn)"
+                            name="parentCategory"
+                        >
+                            <Select allowClear placeholder="Chọn danh mục cha (nếu có)">
+                                {categories.map((cat) => (
+                                    <Select.Option key={cat._id} value={cat._id}>
+                                        {cat.name}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                </Row>
+            </Form>
+        </Modal>
     );
 };
 

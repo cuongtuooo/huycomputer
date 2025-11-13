@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
-import {
-    DownOutlined,
-  
-} from '@ant-design/icons';
+import { DownOutlined, FolderOutlined, FileOutlined } from '@ant-design/icons';
 import { FiShoppingCart } from 'react-icons/fi';
 import { Badge, Popover, Dropdown, Space, Divider, Empty, Drawer } from 'antd';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCurrentApp } from '@/components/context/app.context';
-import { logoutAPI, getCategoryAPI } from '@/services/api';
+import { logoutAPI, getCategoryTreeAPI } from '@/services/api';
 import ManageAccount from '../client/account';
 import { isMobile } from 'react-device-detect';
 import './app.header.scss';
@@ -18,10 +15,17 @@ interface IProps {
     setSearchTerm: (v: string) => void;
 }
 
+interface ICategoryTree {
+    _id: string;
+    name: string;
+    parentCategory?: { _id: string; name: string } | null;
+    children?: ICategoryTree[];
+}
+
 const AppHeader = (props: IProps) => {
     const [openDrawer, setOpenDrawer] = useState(false);
     const [openManageAccount, setOpenManageAccount] = useState(false);
-    const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -35,39 +39,59 @@ const AppHeader = (props: IProps) => {
         setCarts,
     } = useCurrentApp();
 
-    /* ============== LOAD DANH MỤC ============== */
+    /* ===================================================
+       LOAD DANH MỤC CHA - CON (TỪ API PHẲNG)
+    =================================================== */
     useEffect(() => {
         const fetchCats = async () => {
-            const res = await getCategoryAPI();
-            if (res?.data) {
-                const list = res.data.result.map((c: any) => ({
-                    label: c.name,
-                    value: c._id,
-                }));
-                setCategories(list);
+            try {
+                const res = await getCategoryTreeAPI();
+                if (res?.data) {
+                    const treeList: ICategoryTree[] = res.data;
+
+                    // 🟢 Hàm chuyển cây thành menu Dropdown (Ant Design)
+                    const buildMenu = (list: ICategoryTree[]): any[] =>
+                        list.map((cat) => ({
+                            key: cat._id,
+                            label: (
+                                <div
+                                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                    onClick={() => {
+                                        if (cat.children && cat.children.length > 0) {
+                                            navigate(`/?parent=${cat._id}`);
+                                        } else if (cat.parentCategory?._id) {
+                                            navigate(`/?parent=${cat.parentCategory._id}&child=${cat._id}`);
+                                        } else {
+                                            navigate(`/?parent=${cat._id}`);
+                                        }
+                                    }}
+                                >
+                                    {cat.children && cat.children.length > 0 ? (
+                                        <FolderOutlined style={{ color: '#1677ff' }} />
+                                    ) : (
+                                        <FileOutlined style={{ color: '#999' }} />
+                                    )}
+                                    {cat.name}
+                                </div>
+                            ),
+                            children: cat.children && cat.children.length > 0 ? buildMenu(cat.children) : undefined,
+                        }));
+
+                    const menuData = buildMenu(treeList);
+                    setCategories(menuData);
+                }
+            } catch (error) {
+                console.error('❌ Lỗi tải danh mục:', error);
             }
         };
+
         fetchCats();
     }, []);
 
-    /* ============== MENU DANH MỤC DROPDOWN ============== */
-    const menuCategory = {
-        items: categories.map((c) => ({
-            key: c.value,
-            label: (
-                <span
-                    onClick={() => {
-                        navigate(`/?category=${c.value}`);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                >
-                    {c.label}
-                </span>
-            ),
-        })),
-    };
 
-    /* ============== MENU NGƯỜI DÙNG ============== */
+    /* ===================================================
+       MENU DROPDOWN NGƯỜI DÙNG
+    =================================================== */
     const itemsDropdown = [
         ...(user?.role?.name === 'ADMIN'
             ? [
@@ -79,10 +103,7 @@ const AppHeader = (props: IProps) => {
             : []),
         {
             label: (
-                <label
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setOpenManageAccount(true)}
-                >
+                <label style={{ cursor: 'pointer' }} onClick={() => setOpenManageAccount(true)}>
                     Quản lý tài khoản
                 </label>
             ),
@@ -106,7 +127,9 @@ const AppHeader = (props: IProps) => {
         },
     ];
 
-    /* ============== ĐĂNG XUẤT ============== */
+    /* ===================================================
+       ĐĂNG XUẤT
+    =================================================== */
     const handleLogout = async () => {
         const res = await logoutAPI();
         if (res.data) {
@@ -118,7 +141,9 @@ const AppHeader = (props: IProps) => {
         }
     };
 
-    /* ============== GIỎ HÀNG NHỎ (POPOVER) ============== */
+    /* ===================================================
+       GIỎ HÀNG NHỎ (POPOVER)
+    =================================================== */
     const contentPopover = () => (
         <div className="pop-cart-body">
             <div className="pop-cart-content">
@@ -126,6 +151,7 @@ const AppHeader = (props: IProps) => {
                     <div className="book" key={`book-${index}`}>
                         <img
                             src={`${import.meta.env.VITE_BACKEND_URL}/images/Product/${product?.detail?.thumbnail}`}
+                            alt="thumbnail"
                         />
                         <div>{product?.detail?.name}</div>
                         <div className="price">
@@ -147,7 +173,9 @@ const AppHeader = (props: IProps) => {
         </div>
     );
 
-    /* ============== JSX ============== */
+    /* ===================================================
+       JSX
+    =================================================== */
     return (
         <>
             <div className="header-container">
@@ -184,10 +212,15 @@ const AppHeader = (props: IProps) => {
                             <Link to="/">Trang chủ</Link>
                         </li>
 
-                        {/* Dropdown danh mục */}
+                        {/* Dropdown danh mục cha - con */}
                         <li>
-                            <Dropdown menu={menuCategory} trigger={['hover']}>
-                                <span>
+                            <Dropdown
+                                menu={{ items: categories }}
+                                trigger={['hover']}
+                                placement="bottomLeft"
+                                getPopupContainer={() => document.body}
+                            >
+                                <span style={{ cursor: 'pointer', userSelect: 'none' }}>
                                     Sản phẩm <DownOutlined style={{ fontSize: 12 }} />
                                 </span>
                             </Dropdown>

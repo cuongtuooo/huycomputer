@@ -4,7 +4,7 @@ import {
 } from 'antd';
 import { LoadingOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import type { FormProps } from 'antd';
-import { getCategoryAPI, updateProductAPI, uploadFileAPI, getProductByIdAPI } from '@/services/api';
+import { getCategoryAPI, updateProductAPI, uploadFileAPI, getProductByIdAPI, getCategoryTreeAPI } from '@/services/api';
 import type { GetProp, UploadFile, UploadProps } from 'antd';
 import { MAX_UPLOAD_IMAGE_SIZE } from '@/services/helper';
 import { UploadRequestOption as RcCustomRequestOptions } from 'rc-upload/lib/interface';
@@ -56,19 +56,38 @@ const UpdateProduct = (props: IProps) => {
     const imageInputRef = useRef<HTMLInputElement>(null);
     const [activeQuill, setActiveQuill] = useState<any>(null);
 
+    // Lấy toàn bộ danh mục từ API, chỉ lấy những cái có parentCategory
     useEffect(() => {
         const fetchCategory = async () => {
-            const res = await getCategoryAPI();
-            if (res && res.data?.result) {
-                const d = res.data.result.map((item: any) => ({
-                    label: item.name,
-                    value: item._id,
-                }));
-                setListCategory(d);
+            try {
+                const res = await getCategoryTreeAPI();
+                const treeData = res?.data?.result || res?.data; // tuỳ backend
+
+                // ✅ Duyệt đệ quy: chỉ lấy danh mục con (có cấp cha)
+                const flattenChildren = (node: any): any[] => {
+                    if (!node.children || node.children.length === 0) return [];
+                    return node.children.flatMap((child: any) => [
+                        {
+                            label: `${child.name} (${node.name})`, // hiển thị con (tên cha)
+                            value: child._id,
+                        },
+                        ...flattenChildren(child),
+                    ]);
+                };
+
+                const result: any[] = [];
+                treeData.forEach((root: any) => {
+                    result.push(...flattenChildren(root));
+                });
+
+                setListCategory(result);
+            } catch (error) {
+                console.error('❌ Lỗi tải danh mục:', error);
             }
         };
         fetchCategory();
     }, []);
+
 
     // === Khi mở modal, load lại dữ liệu sản phẩm
     useEffect(() => {

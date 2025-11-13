@@ -59,6 +59,11 @@ const LayoutAdmin = () => {
             key: '/admin/order',
             icon: <DollarCircleOutlined />
         },
+        {
+            label: <Link to='/admin/permission'>Phân Quyền</Link>,
+            key: '/admin/permission',
+            icon: <DollarCircleOutlined />
+        },
 
     ];
 

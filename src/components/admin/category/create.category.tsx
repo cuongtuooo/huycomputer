@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { App, Col, Divider, Form, Input, Modal, Row, Select } from 'antd';
 import type { FormProps } from 'antd';
-import { createCategoryAPI, getCategoryAPI } from '@/services/api';
+import { createCategoryAPI, getCategoryTreeAPI } from '@/services/api';
+
 
 interface IProps {
     openModalCreate: boolean;
@@ -23,11 +24,16 @@ const CreateCategory = (props: IProps) => {
 
     useEffect(() => {
         const fetchCategories = async () => {
-            const res = await getCategoryAPI();
-            if (res && res.data) setCategories(res.data.result ?? []);
+            const res = await getCategoryTreeAPI();
+            if (res && res.data) {
+                // ✅ Dữ liệu đã có sẵn cây cha–con
+                setCategories(res.data ?? []);
+            }
         };
+
         fetchCategories();
     }, []);
+
 
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
         setIsSubmit(true);

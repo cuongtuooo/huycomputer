@@ -87,22 +87,29 @@ export const getCategoryAPI = () => {
     const urlBackend = `/api/v1/category`;
     return axios.get<IBackendRes<IModelPaginate<ICategory>>>(urlBackend);
 }
-
 export const createCategoryAPI = (
-    name: string
+    name: string,
+    parentCategory: string | null
 ) => {
     const urlBackend = "/api/v1/category";
-    return axios.post<IBackendRes<IRegister>>(urlBackend,
-        { name})
-}
+    return axios.post<IBackendRes<IRegister>>(urlBackend, {
+        name,
+        parentCategory,
+    });
+};
 
 export const updateCategoryAPI = (
-    _id: string, name: string,
+    _id: string,
+    name: string,
+    parentCategory: string | null
 ) => {
     const urlBackend = `/api/v1/category/${_id}`;
-    return axios.patch<IBackendRes<IRegister>>(urlBackend,
-        { name})
-}
+    return axios.patch<IBackendRes<IRegister>>(urlBackend, {
+        name,
+        parentCategory,
+    });
+};
+
 
 export const deleteCategoryAPI = (_id: string) => {
     const urlBackend = `/api/v1/category/${_id}`;
@@ -284,4 +291,61 @@ export const adminApproveReturnAPI = (id: string) => {
 export const adminRejectReturnAPI = (id: string) => {
     const urlBackend = `/api/v1/order/${id}/admin-reject-return`;
     return axios.patch<IBackendRes<any>>(urlBackend);
+};
+// PERMISSIONS
+export const getPermissionsAPI = (query?: string) => {
+    const url = `/api/v1/permissions?${query || "current=1&pageSize=20"}`;
+    return axios.get<IBackendRes<any>>(url);
+};
+
+export const createPermissionAPI = (data: any) => {
+    const url = `/api/v1/permissions`;
+    return axios.post<IBackendRes<any>>(url, data);
+};
+
+export const updatePermissionAPI = (id: string, data: any) => {
+    const url = `/api/v1/permissions/${id}`;
+    return axios.patch<IBackendRes<any>>(url, data);
+};
+
+export const deletePermissionAPI = (id: string) => {
+    const url = `/api/v1/permissions/${id}`;
+    return axios.delete<IBackendRes<any>>(url);
+};
+
+
+/** 🟢 Lấy danh sách role */
+export const getRolesAPI = () => {
+    return axios.get<IBackendRes<any>>("/api/v1/roles?current=1&pageSize=100");
+};
+
+/** 🟢 Thêm 1 permission vào role */
+export const addPermissionToRoleAPI = (roleId: string, permissionId: string) => {
+    return axios.patch<IBackendRes<any>>(`/api/v1/roles/${roleId}`, {
+        $push: { permissions: permissionId },
+    });
+};
+
+/** 🟠 Xóa 1 permission ra khỏi role */
+export const removePermissionFromRoleAPI = (roleId: string, permissionId: string) => {
+    return axios.patch<IBackendRes<any>>(`/api/v1/roles/${roleId}`, {
+        $pull: { permissions: permissionId },
+    });
+};
+
+/** 🟢 Lấy danh sách Permission */
+export const getPermissionAPI = (query = "current=1&pageSize=100") => {
+    return axios.get(`/api/v1/permissions?${query}`);
+};
+export const getCategoryTreeAPI = () => {
+    const urlBackend = `/api/v1/category/tree/all`;
+    return axios.get<IBackendRes<ICategory[]>>(urlBackend);
+};
+
+export const forgotPasswordAPI = (email: string) => {
+  return axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/v1/users/forgot-password`, { email });
+};
+
+export const resetPasswordAPI = (token: string, newPassword: string) => {
+  return axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/v1/users/reset-password`, { token, newPassword });
 };

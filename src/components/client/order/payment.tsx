@@ -72,10 +72,11 @@ const Payment = (props: IProps) => {
     const handlePlaceOrder: FormProps<FieldType>['onFinish'] = async (values) => {
         const { address, name, method, phone } = values;
         const detail = carts.map(item => ({
-            _id: item._id,
+            _id: item.detail._id,     // ✅ Lấy _id của sản phẩm thực tế
             quantity: item.quantity,
             productName: item.detail.name
-        }))
+        }));
+
 
         setIsSubmit(true);
         const res = await createOrderAPI(
@@ -175,13 +176,13 @@ const Payment = (props: IProps) => {
                     >
                         <div className='order-sum'>
                             <Form.Item<FieldType>
-                                label="Hình thức thanh toán"
+                                label=""
                                 name="method"
                             >
                                 <Radio.Group>
                                     <Space direction="vertical">
                                         <Radio value={"COD"}>Thanh toán khi nhận hàng</Radio>
-                                        <Radio value={"BANKING"}>Chuyển khoản ngân hàng</Radio>
+                                        {/* <Radio value={"BANKING"}>Chuyển khoản ngân hàng</Radio> */}
                                     </Space>
                                 </Radio.Group>
                             </Form.Item>

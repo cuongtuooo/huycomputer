@@ -19,6 +19,9 @@ import ManageUserPage from 'pages/admin/manage.user';
 import LayoutAdmin from 'components/layout/layout.admin';
 import OrderPage from 'pages/client/order';
 import HistoryPage from 'pages/client/history';
+import 'antd/dist/reset.css';
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 import enUS from 'antd/locale/en_US';
 import ManageProductPage from './pages/admin/manage.product';
@@ -27,6 +30,9 @@ import ManageCategoryPage from './pages/admin/manage.category';
 import OrderTrackingPage from './pages/client/order-tracking';
 import viVN from 'antd/locale/vi_VN'; // 👈 ngôn ngữ tiếng Việt
 import 'dayjs/locale/vi'; // 👈 hiển thị ngày tháng tiếng Việt
+import PermissionPage from './pages/admin/permissionPage';
+import ForgotPassword from './pages/client/auth/ForgotPassword';
+import ResetPassword from './pages/client/auth/ResetPassword';
 const router = createBrowserRouter([
   {
     path: "/",
@@ -39,6 +45,14 @@ const router = createBrowserRouter([
       {
         path: "/Product/:id",
         element: <ProductPage />,
+      },
+      {
+        path: "/forgot-password",
+        element: <ForgotPassword/>,
+      },
+      {
+        path: "/reset-password",
+        element: <ResetPassword/>,
       },
       {
         path: "/order",
@@ -111,6 +125,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ManageUserPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "permission",
+        element: (
+          <ProtectedRoute>
+            <PermissionPage />
           </ProtectedRoute>
         ),
       },

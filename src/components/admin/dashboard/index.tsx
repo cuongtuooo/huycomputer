@@ -27,6 +27,14 @@ const AdminDashboard = () => {
         topSellingProducts: [] as any[],
     });
 
+    const displayStatus = {
+        RETURN_RECEIVED: "Trả hàng",
+        RECEIVED: "Đã nhận",
+        SHIPPING: "Đang giao",
+        DELIVERED: "Đã giao",
+        CANCELED: "Đã hủy",
+    };
+
     useEffect(() => {
         const initDashboard = async () => {
             const res = await getDashboardAPI();
@@ -65,27 +73,45 @@ const AdminDashboard = () => {
     const columnsCategories = [
         {
             title: "Tên danh mục",
-            dataIndex: "categoryName",
-            key: "categoryName",
-            render: (text: string) => (
+            dataIndex: "name",
+            key: "name",
+            render: (text: string, record: any) => (
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {getCategoryIcon(text)}
-                    <span>{text}</span>
+                    <strong>{text}</strong>
                 </div>
             ),
         },
         {
-            title: "Số lượng sản phẩm",
-            dataIndex: "productCount",
-            key: "productCount",
+            title: "Danh mục con",
+            dataIndex: "children",
+            key: "children",
+            render: (children: any[]) =>
+                children?.length ? (
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                        {children.map((c) => (
+                            <li key={c._id}>
+                                {c.name} ({c.totalProducts ?? c.productCount ?? 0} SP)
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <i>Không có</i>
+                ),
+        },
+        {
+            title: "Số sản phẩm (bao gồm danh mục con)",
+            dataIndex: "totalProducts",
+            key: "totalProducts",
             render: (v: number) => (
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <NumberOutlined style={{ fontSize: 16, color: "#1677ff" }} />
-                    <span>{v.toLocaleString()}</span>
-                </div>
+                <span style={{ fontWeight: 600 }}>
+                    {v?.toLocaleString?.() ?? 0}
+                </span>
             ),
         },
     ];
+
+
 
     // ========================== BẢNG: Đơn hàng gần đây ==========================
     const columnsRecentOrders = [
@@ -116,7 +142,7 @@ const AdminDashboard = () => {
                             : v === "CANCELED"
                                 ? "red"
                                 : "orange";
-                return <Tag color={color}>{v}</Tag>;
+                return <Tag color={color} >{displayStatus[v] || v}</Tag>;
             },
         },
     ];
@@ -234,7 +260,7 @@ const AdminDashboard = () => {
                         <Table
                             columns={columnsCategories}
                             dataSource={dataDashboard.categoriesStats}
-                            rowKey="categoryName"
+                            rowKey="_id"
                             pagination={false}
                         />
                     </Card>

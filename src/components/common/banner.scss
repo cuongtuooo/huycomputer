@@ -1,0 +1,74 @@
+.banner-container {
+    position: relative;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto 16px;
+    border-radius: 12px;
+    overflow: hidden; // bo góc cho ảnh
+    background: #f7f9fc;
+
+    .banner-slide {
+        width: 100%;
+        aspect-ratio: 1536 / 600; // giữ tỉ lệ banner ngang đẹp
+        display: block;
+        background: #fff;
+
+        img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; // nếu ảnh không đúng tỉ lệ vẫn fill đầy
+        }
+    }
+
+    /* Nút điều khiển */
+    .banner-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 5;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.35);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: transform .12s ease, background .12s ease;
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.5);
+            transform: translateY(-50%) scale(1.05);
+        }
+    }
+
+    .banner-arrow--prev {
+        left: 12px;
+    }
+
+    .banner-arrow--next {
+        right: 12px;
+    }
+
+    /* Tối ưu dots của Antd */
+    .ant-carousel .slick-dots {
+        bottom: 10px;
+
+        li button {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        li.slick-active button {
+            background: #1677ff;
+        }
+    }
+}
+
+/* Mobile: hạ tỉ lệ xuống để không quá cao */
+@media (max-width: 768px) {
+    .banner-container .banner-slide {
+        aspect-ratio: 16 / 9;
+    }
+}

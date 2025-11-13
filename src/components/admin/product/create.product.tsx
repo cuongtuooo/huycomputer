@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import { LoadingOutlined, MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import type { FormProps } from 'antd';
-import { createProductAPI, getCategoryAPI, uploadFileAPI } from '@/services/api';
+import { createProductAPI, getCategoryTreeAPI, uploadFileAPI } from '@/services/api';
 import type { GetProp, UploadFile, UploadProps } from 'antd';
 import { MAX_UPLOAD_IMAGE_SIZE } from '@/services/helper';
 import { UploadChangeParam } from 'antd/es/upload';
@@ -58,19 +58,38 @@ const CreateProduct = (props: IProps) => {
     const [uploadingImage, setUploadingImage] = useState(false);
 
     // === Lấy danh mục
+    // Lấy toàn bộ danh mục từ API, chỉ lấy những cái có parentCategory
     useEffect(() => {
         const fetchCategory = async () => {
-            const res = await getCategoryAPI();
-            if (res && res.data?.result) {
-                const d = res.data.result.map((item: any) => ({
-                    label: item.name,
-                    value: item._id,
-                }));
-                setListCategory(d);
+            try {
+                const res = await getCategoryTreeAPI();
+                const treeData = res?.data?.result || res?.data; // tuỳ backend
+
+                // ✅ Duyệt đệ quy: chỉ lấy danh mục con (có cấp cha)
+                const flattenChildren = (node: any): any[] => {
+                    if (!node.children || node.children.length === 0) return [];
+                    return node.children.flatMap((child: any) => [
+                        {
+                            label: `${child.name} (${node.name})`, // hiển thị con (tên cha)
+                            value: child._id,
+                        },
+                        ...flattenChildren(child),
+                    ]);
+                };
+
+                const result: any[] = [];
+                treeData.forEach((root: any) => {
+                    result.push(...flattenChildren(root));
+                });
+
+                setListCategory(result);
+            } catch (error) {
+                console.error('❌ Lỗi tải danh mục:', error);
             }
         };
         fetchCategory();
     }, []);
+
 
     // === Toolbar editor có nút upload ảnh
     const makeModules = (targetRef: any) => ({

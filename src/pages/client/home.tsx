@@ -1,325 +1,267 @@
 import MobileFilter from '@/components/client/product/mobile.filter';
-import { getProductsAPI, getCategoryAPI } from '@/services/api';
-import { FilterTwoTone } from '@ant-design/icons';
-import {
-    Row, Col, Form, Divider, InputNumber,
-    Button, Rate, Tabs, Pagination, Spin,
-} from 'antd';
-import type { FormProps } from 'antd';
+import Banner from '@/components/common/Banner';
+import { getProductsAPI, getCategoryTreeAPI } from '@/services/api';
+import { Tabs, Row, Col, Spin, Pagination } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 import 'styles/home.scss';
 
-type FieldType = {
-    range: { from: number; to: number };
-    category: string[];
-};
+interface Category {
+    _id: string;
+    name: string;
+    parentCategory?: { _id: string; name: string } | null;
+}
 
-type CategorySection = {
+interface CategorySection {
     id: string;
     name: string;
     products: IProductTable[];
-};
+}
 
 const MAX_SECTIONS = 8;
 const MAX_ITEMS_PER_SECTION = 10;
 
 const HomePage = () => {
     const [searchTerm] = useOutletContext() as any;
-
-    const [listCategory, setListCategory] = useState<{ label: string; value: string }[]>([]);
+    const [listCategory, setListCategory] = useState<Category[]>([]);
     const [sections, setSections] = useState<CategorySection[]>([]);
-
     const [listProduct, setListProduct] = useState<IProductTable[]>([]);
-    const [current, setCurrent] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(10);
-    const [total, setTotal] = useState<number>(0);
-
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [filter, setFilter] = useState<string>('');
     const [sortQuery, setSortQuery] = useState<string>('sort=-sold');
-    const [showMobileFilter, setShowMobileFilter] = useState<boolean>(false);
-    const [form] = Form.useForm();
-    const navigate = useNavigate();
     const [params, setParams] = useSearchParams();
+    const navigate = useNavigate();
 
-    const isListMode = useMemo(() => {
-        if (searchTerm) return true;
-        if (filter.includes('category=')) return true;
-        if (params.get('category')) return true;
-        return false;
-    }, [searchTerm, filter, params]);
+    const parentId = params.get('parent') || null;
+    const childId = params.get('child') || null;
 
-    const items = [
-        { key: 'sort=-sold', label: 'Phổ biến', children: <></> },
-        { key: 'sort=-updatedAt', label: 'Hàng Mới', children: <></> },
-        { key: 'sort=price', label: 'Giá Thấp Đến Cao', children: <></> },
-        { key: 'sort=-price', label: 'Giá Cao Đến Thấp', children: <></> },
+    const banners = [
+        { id: 1, img: "/banner/baner1.jpg", alt: "Siêu sale Laptop" },
+        { id: 2, img: "/banner/baner1.jpg", alt: "Gaming đỉnh cao" },
+        { id: 3, img: "/banner/baner1.jpg", alt: "Back to School" },
     ];
-
-    // ---------- LOAD DANH MỤC ----------
+    // ========== LẤY DANH MỤC ==========
     useEffect(() => {
-        const initCategory = async () => {
-            const res = await getCategoryAPI();
-            if (res?.data) {
-                const d = res.data.result.map((it: any) => ({ label: it.name, value: it._id }));
-                setListCategory(d);
+        const fetchCategories = async () => {
+            try {
+                const res = await getCategoryTreeAPI();
+                if (res?.data) {
+                    setListCategory(res.data); // ✅ dữ liệu giờ đã có children
+                }
+            } catch (error) {
+                console.error('❌ Lỗi tải danh mục:', error);
             }
-        };
-        initCategory();
+        };  
+        fetchCategories();
     }, []);
 
-    // ---------- TRANG CHỦ: load sản phẩm theo từng danh mục ----------
+
+    const parentCategories = useMemo(() => listCategory, [listCategory]);
+
+
+    const childCategories = useMemo(() => {
+        const parent = listCategory.find((c) => c._id === parentId);
+        return parent?.children ?? [];
+    }, [listCategory, parentId]);
+
+
+    // ========== LOAD TRANG CHỦ (CÁC DANH MỤC CHA) ==========
     useEffect(() => {
         const loadSections = async () => {
-            if (!listCategory.length || isListMode) return;
+            if (parentId || searchTerm) return; // Nếu đang xem tất cả thì không chạy
             setIsLoading(true);
             try {
-                const cats = listCategory.slice(0, MAX_SECTIONS);
-                const reqs = cats.map(c =>
-                    getProductsAPI(`current=1&pageSize=${MAX_ITEMS_PER_SECTION}&category=${c.value}&${sortQuery}`)
-                );
-                const rs = await Promise.all(reqs);
-                const packed: CategorySection[] = rs.map((r: any, i: number) => ({
-                    id: cats[i].value,
-                    name: cats[i].label,
-                    products: r?.data?.result || [],
-                }));
-                setSections(packed);
+                // Lấy tối đa MAX_SECTIONS danh mục cha
+                const cats = parentCategories.slice(0, MAX_SECTIONS);
+
+                // Lấy các sản phẩm thuộc các danh mục con của từng danh mục cha
+                const reqs = cats.map(async (cat) => {
+                    // ✅ Lấy ID tất cả danh mục con cấp dưới của cat
+                    const collectChildIds = (node: any): string[] => {
+                        if (!node.children || node.children.length === 0) return [node._id];
+                        return [node._id, ...node.children.flatMap(collectChildIds)];
+                    };
+
+                    const allIds = collectChildIds(cat);
+                    const queryIds = allIds.join(',');
+
+                    const res = await getProductsAPI(
+                        `current=1&pageSize=${MAX_ITEMS_PER_SECTION}&category=${queryIds}&${sortQuery}`
+                    );
+
+                    return {
+                        id: cat._id,
+                        name: cat.name,
+                        products: res?.data?.result || [],
+                    };
+                });
+
+
+                const results = await Promise.all(reqs);
+                setSections(results);
             } finally {
                 setIsLoading(false);
             }
         };
         loadSections();
-    }, [listCategory, isListMode, sortQuery]);
+    }, [listCategory, sortQuery, parentId, searchTerm]);
 
-    // ---------- DANH SÁCH (khi chọn danh mục hoặc search) ----------
+    // ========== XEM TẤT CẢ (CÁC CON) ==========
     useEffect(() => {
-        if (!isListMode) return;
-        fetchProduct();
-        // 👇 THÊM params vào dependency
-    }, [current, pageSize, filter, sortQuery, searchTerm, isListMode, params]);
-
-    const fetchProduct = async () => {
-        setIsLoading(true);
-        let query = `current=${current}&pageSize=${pageSize}`;
-        if (filter) query += `&${filter}`;
-        if (sortQuery) query += `&${sortQuery}`;
-        if (searchTerm) query += `&name=/${searchTerm}/i`;
-
-        // 👇 lấy category từ URL
-        const urlCate = params.get('category');
-        if (urlCate && !filter.includes('category=')) query += `&category=${urlCate}`;
-
-        const res = await getProductsAPI(query);
-        if (res?.data) {
-            setListProduct(res.data.result);
-            setTotal(res.data.meta.total);
-        }
-        setIsLoading(false);
-    };
-
-    const handleOnchangePage = (pagination: { current: number; pageSize: number }) => {
-        if (pagination.current !== current) setCurrent(pagination.current);
-        if (pagination.pageSize !== pageSize) {
-            setPageSize(pagination.pageSize);
-            setCurrent(1);
-        }
-    };
-
-    const handleChangeFilter = (changedValues: any, values: any) => {
-        if (changedValues.category) {
-            const cate = values.category;
-            if (cate?.length) {
-                setFilter(`category=${cate.join(',')}`);
-                setPageSize(15);
-                setCurrent(1);
-            } else {
-                setFilter('');
+        const loadChildProducts = async () => {
+            if (!parentId) return;
+            setIsLoading(true);
+            try {
+                // Nếu có childId thì chỉ lấy sản phẩm của danh mục con đó
+                const categoryIds = childId ? [childId] : childCategories.map((c) => c._id);
+                const query = `current=1&pageSize=20&category=${categoryIds.join(',')}&${sortQuery}`;
+                const res = await getProductsAPI(query);
+                setListProduct(res?.data?.result || []);
+            } finally {
+                setIsLoading(false);
             }
-        }
+        };
+        loadChildProducts();
+    }, [parentId, childId, sortQuery, listCategory]);
+
+    // ========== HÀM MỞ "XEM TẤT CẢ" ==========
+    const openAllOfCategory = (catId: string) => {
+        navigate(`/?parent=${catId}`);
+        // window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const onFinish: FormProps<FieldType>['onFinish'] = (values) => {
-        if (values?.range?.from >= 0 && values?.range?.to >= 0) {
-            let f = `price>=${values.range.from}&price<=${values.range.to}`;
-            if (values?.category?.length) f += `&category=${values.category.join(',')}`;
-            setFilter(f);
-            setPageSize(15);
-            setCurrent(1);
-        }
-    };
-
-    const openAllOfCategory = (categoryId: string) => {
-        setFilter(`category=${categoryId}`);
-        setPageSize(15);
-        setCurrent(1);
-        setParams(new URLSearchParams({ category: categoryId }));
-        // 👇 Scroll lên đầu
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    // ========== HÀM CHỌN DANH MỤC CON TRONG TAB ==========
+    const handleSelectChild = (childId: string) => {
+        navigate(`/?parent=${parentId}&child=${childId}`);
+        // window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
-        <>
-            <div style={{ background: '#efefef', padding: '20px 0' }}>
-                <div className="homepage-container" style={{ maxWidth: 1440, margin: '0 auto' }}>
-                    <Row gutter={[20, 20]}>
-                        <Col md={24} xs={24}>
-                            <Spin spinning={isLoading} tip="Loading...">
-                                <div style={{ padding: 20, background: '#fff', borderRadius: 5 }}>
-                                    {isListMode && (
-                                        <Row>
-                                            <Tabs
-                                                defaultActiveKey="sort=-sold"
-                                                items={items}
-                                                onChange={(v) => setSortQuery(v)}
-                                            />
-                                        </Row>
-                                    )}
+        <div style={{ background: '#efefef', padding: '20px 0' }}>
+            <div className="homepage-container" style={{ maxWidth: 1440, margin: '0 auto' }}>
+                {/* ✅ Banner ở đầu trang */}
+                <Banner items={banners} autoplaySpeed={3000} />
+                <Spin spinning={isLoading} tip="Loading...">
+                    {/* ======== TRANG CHỦ - DANH MỤC CHA ======== */}
+                    {!parentId && (
+                        <div className="sections-wrap">
+                            {sections.map((sec) => (
+                                <div className="category-section" key={sec.id}>
+                                    {/* Tiêu đề danh mục */}
+                                    <h3 className="category-title" style={{ marginBottom: 12 }}>
+                                        {sec.name}
+                                    </h3>
 
-                                    {!isListMode && (
-                                        <div className="sections-wrap">
-                                            {sections.map((sec) => (
-                                                <div className="category-section" key={sec.id}>
-                                                    <div className="category-header">
-                                                        <h3 className="category-title">{sec.name}</h3>
-                                                        <button className="see-all" onClick={() => openAllOfCategory(sec.id)}>
-                                                            Xem tất cả
-                                                        </button>
+                                    {/* Grid sản phẩm */}
+                                    <Row className="customize-row">
+                                        {sec.products.map((item) => (
+                                            <div
+                                                key={item._id}
+                                                className="column"
+                                                onClick={() => navigate(`/Product/${item._id}`)}
+                                            >
+                                                <div className="wrapper">
+                                                    <div className="thumbnail">
+                                                        <img
+                                                            src={`${import.meta.env.VITE_BACKEND_URL}/images/Product/${item.thumbnail}`}
+                                                            alt={item.name}
+                                                        />
                                                     </div>
-
-                                                    <Row className="customize-row">
-                                                        {sec.products.map((item, idx) => (
-                                                            <div
-                                                                onClick={() => navigate(`/Product/${item._id}`)}
-                                                                className="column"
-                                                                key={`Product-${sec.id}-${idx}`}
-                                                            >
-                                                                <div className="wrapper">
-                                                                    <div className="thumbnail">
-                                                                        <img
-                                                                            src={`${import.meta.env.VITE_BACKEND_URL}/images/Product/${item.thumbnail}`}
-                                                                            alt="thumbnail Product"
-                                                                        />
-                                                                    </div>
-                                                                    <div
-                                                                        title={item.name}
-                                                                        style={{
-                                                                            marginTop: 8,
-                                                                            fontSize: 15,
-                                                                            color: '#2f3640',
-                                                                            fontWeight: 600,
-                                                                            display: '-webkit-box',
-                                                                            WebkitLineClamp: 2,
-                                                                            WebkitBoxOrient: 'vertical',
-                                                                            overflow: 'hidden',
-                                                                        }}
-                                                                    >
-                                                                        {item.name}
-                                                                    </div>
-
-                                                                    <div
-                                                                        style={{
-                                                                            marginTop: 6,
-                                                                            fontSize: 18,
-                                                                            fontWeight: 700,
-                                                                            color: '#105aa2',
-                                                                        }}
-                                                                    >
-                                                                        {new Intl.NumberFormat('vi-VN', {
-                                                                            style: 'currency',
-                                                                            currency: 'VND',
-                                                                            maximumFractionDigits: 0,
-                                                                        }).format(item?.price ?? 0)}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </Row>
+                                                    <div className="name">{item.name}</div>
+                                                    <div className="price">
+                                                        {new Intl.NumberFormat('vi-VN', {
+                                                            style: 'currency',
+                                                            currency: 'VND',
+                                                        }).format(item.price ?? 0)}
+                                                    </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                            </div>
+                                        ))}
+                                    </Row>
 
-                                    {isListMode && (
-                                        <>
-                                            <Row className="customize-row">
-                                                {listProduct.map((item, index) => (
-                                                    <div
-                                                        onClick={() => navigate(`/Product/${item._id}`)}
-                                                        className="column"
-                                                        key={`Product-${index}`}
-                                                    >
-                                                        <div className="wrapper">
-                                                            <div className="thumbnail">
-                                                                <img
-                                                                    src={`${import.meta.env.VITE_BACKEND_URL}/images/Product/${item.thumbnail}`}
-                                                                    alt="thumbnail Product"
-                                                                />
-                                                            </div>
-                                                            <div
-                                                                title={item.name}
-                                                                style={{
-                                                                    marginTop: 8,
-                                                                    fontSize: 15,
-                                                                    color: '#2f3640',
-                                                                    fontWeight: 600,
-                                                                    display: '-webkit-box',
-                                                                    WebkitLineClamp: 2,
-                                                                    WebkitBoxOrient: 'vertical',
-                                                                    overflow: 'hidden',
-                                                                }}
-                                                            >
-                                                                {item.name}
-                                                            </div>
-                                                            <div
-                                                                style={{
-                                                                    marginTop: 6,
-                                                                    fontSize: 18,
-                                                                    fontWeight: 700,
-                                                                    color: '#105aa2',
-                                                                }}
-                                                            >
-                                                                {new Intl.NumberFormat('vi-VN', {
-                                                                    style: 'currency',
-                                                                    currency: 'VND',
-                                                                    maximumFractionDigits: 0,
-                                                                }).format(item?.price ?? 0)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </Row>
-
-                                            <div style={{ marginTop: 30 }} />
-                                            <Row style={{ display: 'flex', justifyContent: 'center' }}>
-                                                <Pagination
-                                                    current={current}
-                                                    total={total}
-                                                    pageSize={pageSize}
-                                                    onChange={(p, s) => handleOnchangePage({ current: p, pageSize: s })}
-                                                    showSizeChanger
-                                                    pageSizeOptions={[15, 30, 45]}
-                                                />
-                                            </Row>
-                                        </>
-                                    )}
+                                    {/* ✅ Nút "Xem tất cả" ở dưới */}
+                                    <div style={{ textAlign: 'center', marginTop: 12 }}>
+                                        <button
+                                            className="see-all"
+                                            style={{
+                                                background: '#105aa2',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: 6,
+                                                padding: '6px 16px',
+                                                cursor: 'pointer',
+                                                fontWeight: 500,
+                                            }}
+                                            onClick={() => openAllOfCategory(sec.id)}
+                                        >
+                                            Xem tất cả
+                                        </button>
+                                    </div>
                                 </div>
-                            </Spin>
-                        </Col>
-                    </Row>
-                </div>
-            </div>
+                            ))}
+                        </div>
+                    )}
 
-            {/* Mobile Filter */}
-            <MobileFilter
-                isOpen={showMobileFilter}
-                setIsOpen={setShowMobileFilter}
-                handleChangeFilter={handleChangeFilter}
-                listCategory={listCategory}
-                onFinish={onFinish}
-            />
-        </>
+                    {/* ======== XEM TẤT CẢ - CÁC DANH MỤC CON ======== */}
+                    {parentId && (
+                        <div style={{ background: '#fff', borderRadius: 6, padding: 20 }}>
+                            <h2 style={{ marginBottom: 16 }}>
+                                Danh mục: {listCategory.find((c) => c._id === parentId)?.name}
+                            </h2>
+
+                            {/* ✅ Tabs hiển thị danh mục con + tab "Tất cả" */}
+                            <Tabs
+                                defaultActiveKey={childId || "all"}
+                                activeKey={childId || "all"}
+                                onChange={(key) => {
+                                    if (key === "all") {
+                                        navigate(`/?parent=${parentId}`); // 🟢 load tất cả sản phẩm con
+                                    } else {
+                                        navigate(`/?parent=${parentId}&child=${key}`);
+                                    }
+                                }}
+                                items={[
+                                    {
+                                        key: "all",
+                                        label: "Tất cả",
+                                    },
+                                    ...childCategories.map((c) => ({
+                                        key: c._id,
+                                        label: c.name,
+                                    })),
+                                ]}
+                            />
+
+
+                            <Row className="customize-row">
+                                {listProduct.map((item) => (
+                                    <div
+                                        key={item._id}
+                                        className="column"
+                                        onClick={() => navigate(`/Product/${item._id}`)}
+                                    >
+                                        <div className="wrapper">
+                                            <div className="thumbnail">
+                                                <img
+                                                    src={`${import.meta.env.VITE_BACKEND_URL}/images/Product/${item.thumbnail}`}
+                                                    alt={item.name}
+                                                />
+                                            </div>
+                                            <div className="name">{item.name}</div>
+                                            <div className="price">
+                                                {new Intl.NumberFormat('vi-VN', {
+                                                    style: 'currency',
+                                                    currency: 'VND',
+                                                }).format(item.price ?? 0)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </Row>
+                        </div>
+                    )}
+                </Spin>
+            </div>
+        </div>
     );
 };
 

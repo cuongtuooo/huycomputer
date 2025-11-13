@@ -75,7 +75,9 @@ const LoginPage = () => {
                             >
                                 <Input.Password />
                             </Form.Item>
-
+                            <p style={{ textAlign: 'right' }}>
+                                <Link to="/forgot-password">Quên mật khẩu?</Link>
+                            </p>
                             <Form.Item>
                                 <Button type="primary" htmlType="submit" loading={isSubmit}>
                                     Đăng nhập

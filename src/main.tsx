@@ -31,8 +31,9 @@ import OrderTrackingPage from './pages/client/order-tracking';
 import viVN from 'antd/locale/vi_VN'; // 👈 ngôn ngữ tiếng Việt
 import 'dayjs/locale/vi'; // 👈 hiển thị ngày tháng tiếng Việt
 import PermissionPage from './pages/admin/permissionPage';
-import ForgotPassword from './pages/client/auth/ForgotPassword';
-import ResetPassword from './pages/client/auth/ResetPassword';
+import ForgotPassword from './pages/client/auth/forgotPassword';
+import ResetPassword from './pages/client/auth/resetPassword';
+import BlogPage from './pages/client/blog';
 const router = createBrowserRouter([
   {
     path: "/",
@@ -71,8 +72,8 @@ const router = createBrowserRouter([
         )
       },
       {
-        path: "/about",
-        element: <AboutPage />,
+        path: "/blog",
+        element: <BlogPage />,
       },
       {
         path: "/history",

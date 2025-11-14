@@ -227,10 +227,7 @@ const AppHeader = (props: IProps) => {
                         </li>
 
                         <li>
-                            <Link to="/about">Giới thiệu</Link>
-                        </li>
-                        <li>
-                            <Link to="/contact">Liên hệ</Link>
+                            <Link to="/blog">Blog</Link>
                         </li>
                         <li>
                             <Link to="/orders">Đơn hàng</Link>

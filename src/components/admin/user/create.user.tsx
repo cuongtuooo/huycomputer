@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { App, Divider, Form, Input, Modal } from 'antd';
+import { useEffect, useState } from 'react';
+import { App, Divider, Form, Input, Modal, Select } from 'antd';
 import type { FormProps } from 'antd';
 import { createUserAPI } from '@/services/api';
+import { getRolesAPI } from "@/services/api";
 
 interface IProps {
     openModalCreate: boolean;
@@ -14,6 +15,7 @@ type FieldType = {
     password: string;
     email: string;
     phone: string;
+    role: string;
 };
 
 const CreateUser = (props: IProps) => {
@@ -24,11 +26,22 @@ const CreateUser = (props: IProps) => {
     // https://ant.design/components/form#components-form-demo-control-hooks
     const [form] = Form.useForm();
 
+    const [roles, setRoles] = useState([]);
+
+    useEffect(() => {
+        const loadRoles = async () => {
+            const res = await getRolesAPI();
+            if (res?.data?.result) {
+                setRoles(res.data.result);
+            }
+        };
+        loadRoles();
+    }, []);
 
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
-        const { name, password, email, phone } = values;
+        const { name, password, email, phone, role } = values;
         setIsSubmit(true)
-        const res = await createUserAPI(name, email, password, phone);
+        const res = await createUserAPI(name, email, password, phone, role);
         if (res && res.data) {
             message.success('Tạo mới user thành công');
             form.resetFields();
@@ -102,6 +115,20 @@ const CreateUser = (props: IProps) => {
                     >
                         <Input />
                     </Form.Item>
+                    <Form.Item
+                        label="Role"
+                        name="role"
+                        rules={[{ required: true, message: "Vui lòng chọn role!" }]}
+                    >
+                        <Select placeholder="Chọn role">
+                            {roles.map((r: any) => (
+                                <Select.Option key={r._id} value={r._id}>
+                                    {r.name}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+
                 </Form>
             </Modal>
         </>

@@ -101,6 +101,20 @@ const TableUser = () => {
         },
 
         {
+            title: 'Chức vụ',
+            dataIndex: 'role',
+            hideInSearch: true,
+            render: (_, entity) => {
+                return (
+                    <span style={{ fontWeight: 600 }}>
+                        {entity?.role?.name || "Không có"}
+                    </span>
+                );
+            }
+        },
+
+
+        {
             title: 'Hành động',
             hideInSearch: true,
             render(dom, entity, index, action, schema) {
@@ -203,22 +217,22 @@ const TableUser = () => {
                         data={currentDataTable}
                         filename='export-user.csv'
                     >
-                        <Button
+                        {/* <Button
                             icon={<ExportOutlined />}
                             type="primary"
                         >
                             Xuất
-                        </Button>
+                        </Button> */}
                     </CSVLink>
                     ,
 
-                    <Button
-                        icon={<CloudUploadOutlined />}
-                        type="primary"
-                        onClick={() => setOpenModalImport(true)}
-                    >
-                        Nhập
-                    </Button>,
+                    // <Button
+                    //     icon={<CloudUploadOutlined />}
+                    //     type="primary"
+                    //     onClick={() => setOpenModalImport(true)}
+                    // >
+                    //     Nhập
+                    // </Button>,
 
                     <Button
                         key="button"

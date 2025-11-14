@@ -1,9 +1,8 @@
 import {
     getOrdersAPI,
     adminUpdateOrderStatusAPI,
-    adminApproveReturnAPI,
-    adminRejectReturnAPI,
     adminReturnReceivedAPI,
+    adminGetOrdersAPI,
 } from '@/services/api';
 import { dateRangeValidate } from '@/services/helper';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
@@ -149,22 +148,6 @@ const TableOrder = () => {
         });
     };
 
-    const handleApproveReturn = async (record: IOrderTable) => {
-        const res = await adminApproveReturnAPI(record._id);
-        if (res?.data) {
-            message.success('Đã chấp nhận hoàn hàng');
-            actionRef.current?.reload();
-        }
-    };
-
-    const handleRejectReturn = async (record: IOrderTable) => {
-        const res = await adminRejectReturnAPI(record._id);
-        if (res?.data) {
-            message.success('Đã từ chối hoàn hàng');
-            actionRef.current?.reload();
-        }
-    };
-
     // -------------------- Export Excel --------------------
     const handleExportExcel = async () => {
         try {
@@ -173,7 +156,7 @@ const TableOrder = () => {
                 current: 1,
                 pageSize: 5000,
             });
-            const res = await getOrdersAPI(query);
+            const res = await adminGetOrdersAPI(query);
             const rows = (res?.data?.result || []) as IOrderTable[];
 
             const data = rows.map((r) => ({
@@ -223,8 +206,7 @@ const TableOrder = () => {
                 const s = record.status as OrderStatus;
                 const canShip = s === 'PENDING';
                 const canDelivered = s === 'SHIPPING';
-                const canReturnReceived = s === 'RETURNED';
-                const canApproveReject = s === 'RETURN_REQUESTED';
+                const canReturnReceived = s === 'RETURN_REQUESTED';
                 return (
                     <Space>
                         <Button
@@ -237,16 +219,7 @@ const TableOrder = () => {
                         >
                             Xem
                         </Button>
-                        {canApproveReject && (
-                            <>
-                                <Button size="small" type="primary" onClick={() => handleApproveReturn(record)}>
-                                    Chấp nhận
-                                </Button>
-                                <Button size="small" danger onClick={() => handleRejectReturn(record)}>
-                                    Từ chối
-                                </Button>
-                            </>
-                        )}
+                 
                         <Button size="small" disabled={!canShip} onClick={() => handleAdminUpdate(record, 'SHIPPING')}>
                             Giao hàng
                         </Button>
@@ -336,7 +309,7 @@ const TableOrder = () => {
                             lastParamsRef.current = params;
                             lastSortRef.current = sort;
                             const query = buildQuery(params, sort);
-                            const res = await getOrdersAPI(query);
+                            const res = await adminGetOrdersAPI(query);
                             const m = res?.data?.meta;
                             const rows = res?.data?.result || [];
                             if (m) setMeta(m);

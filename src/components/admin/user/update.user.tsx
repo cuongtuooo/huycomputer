@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { App, Divider, Form, Input, Modal } from 'antd';
+import { App, Divider, Form, Input, Modal, Select } from 'antd';
 import type { FormProps } from 'antd';
-import { updateUserAPI } from '@/services/api';
+import { getRolesAPI, updateUserAPI } from '@/services/api';
 
 interface IProps {
     openModalUpdate: boolean;
@@ -28,22 +28,34 @@ const UpdateUser = (props: IProps) => {
     // https://ant.design/components/form#components-form-demo-control-hooks
     const [form] = Form.useForm();
 
+    const [roles, setRoles] = useState([]);
+
+    useEffect(() => {
+        const fetchRoles = async () => {
+            const res = await getRolesAPI();
+            setRoles(res?.data?.result || []);
+        };
+        fetchRoles();
+    }, []);
+
+
     useEffect(() => {
         if (dataUpdate) {
             form.setFieldsValue({
                 _id: dataUpdate._id,
                 name: dataUpdate.name,
                 email: dataUpdate.email,
-                phone: dataUpdate.phone
+                phone: dataUpdate.phone,
+                role: dataUpdate?.role?._id,
             })
         }
     }, [dataUpdate])
 
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
-        const { _id, name, phone } = values;
+        const { _id, name, phone, role } = values;
         const email = dataUpdate?.email;
         setIsSubmit(true)
-        const res = await updateUserAPI(_id, name, phone, email!);
+        const res = await updateUserAPI(_id, name, phone, email, role);
         if (res && res.data) {
             message.success('Cập nhật user thành công');
             form.resetFields();
@@ -127,6 +139,21 @@ const UpdateUser = (props: IProps) => {
                     >
                         <Input />
                     </Form.Item>
+
+                    <Form.Item
+                        label="Role"
+                        name="role"
+                        rules={[{ required: true, message: "Vui lòng chọn role!" }]}
+                    >
+                        <Select>
+                            {roles.map((r: any) => (
+                                <Select.Option key={r._id} value={r._id}>
+                                    {r.name}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+
                 </Form>
             </Modal>
         </>

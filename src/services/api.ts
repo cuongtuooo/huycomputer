@@ -34,11 +34,17 @@ export const getUsersAPI = (query: string) => {
 }
 
 export const createUserAPI = (name: string, email: string,
-    password: string, phone: string) => {
-    const urlBackend = "/api/v1/users";
-    return axios.post<IBackendRes<IRegister>>(urlBackend,
-        { name, email, password, phone, role:"6883003aac8a30a7ede53073" })
-}
+    password: string, phone: string, role: string) => {
+
+    return axios.post("/api/v1/users", {
+        name,
+        email,
+        password,
+        phone,
+        role
+    });
+};
+
 
 export const bulkCreateUserAPI = (hoidanit: {
     name: string;
@@ -50,10 +56,10 @@ export const bulkCreateUserAPI = (hoidanit: {
     return axios.post<IBackendRes<IResponseImport>>(urlBackend, hoidanit)
 }
 
-export const updateUserAPI = (_id: string, name: string, phone: string, email: string) => {
+export const updateUserAPI = (_id: string, name: string, phone: string, email: string, role:string) => {
     const urlBackend = `/api/v1/users`;
     return axios.patch<IBackendRes<IRegister>>(urlBackend,
-        { _id, name, phone, email })
+        { _id, name, phone, email, role })
 }
 
 export const deleteUserAPI = (_id: string) => {
@@ -283,15 +289,8 @@ export const adminReturnReceivedAPI = (id: string) => {
 };
 
 
-export const adminApproveReturnAPI = (id: string) => {
-    const urlBackend = `/api/v1/order/${id}/admin-approve-return`;
-    return axios.patch<IBackendRes<any>>(urlBackend);
-};
 
-export const adminRejectReturnAPI = (id: string) => {
-    const urlBackend = `/api/v1/order/${id}/admin-reject-return`;
-    return axios.patch<IBackendRes<any>>(urlBackend);
-};
+
 // PERMISSIONS
 export const getPermissionsAPI = (query?: string) => {
     const url = `/api/v1/permissions?${query || "current=1&pageSize=20"}`;
@@ -349,3 +348,12 @@ export const forgotPasswordAPI = (email: string) => {
 export const resetPasswordAPI = (token: string, newPassword: string) => {
   return axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/v1/users/reset-password`, { token, newPassword });
 };
+
+export const adminGetOrdersAPI = (query: string) => {
+    return axios.get(`/api/v1/admin/order?${query}`);
+};
+
+export const adminGetOrderDetailAPI = (id: string) => {
+    return axios.get(`/api/v1/admin/order/${id}`);
+};
+
